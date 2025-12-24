@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EvacuationPlanning", "EvacuationPlanning\EvacuationPlanning.csproj", "{98686D28-177E-DA2D-FA65-6AD3AC0C5939}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{98686D28-177E-DA2D-FA65-6AD3AC0C5939}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{98686D28-177E-DA2D-FA65-6AD3AC0C5939}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{98686D28-177E-DA2D-FA65-6AD3AC0C5939}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{98686D28-177E-DA2D-FA65-6AD3AC0C5939}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F505DF73-328E-430B-A5AE-DD742D222C69}
+	EndGlobalSection
+EndGlobal
