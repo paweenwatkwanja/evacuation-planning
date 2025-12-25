@@ -12,66 +12,73 @@ public class EvacuationPlanningBusinessFlow
         _evacuationPlanningRepository = evacuationPlanningRepository;
     }
 
-    public EvacuationZoneResponse ProcessEvacuationZone(EvacuationZoneRequest request)
+    public List<EvacuationZoneResponse> ProcessEvacuationZones(List<EvacuationZoneRequest> requests)
     {
-        Console.WriteLine("BusinessFlow");
-        EvacuationZoneBusinessLogic.ValidateEvacuationZoneRequest(request);
-
-        EvacuationZone evacuationZone = new EvacuationZone()
+        List<EvacuationZone> evacuationZones = new List<EvacuationZone>();
+        foreach (EvacuationZoneRequest request in requests)
         {
-            ZoneID = request.ZoneID,
-            Latitude = request.LocationCoordinates.Latitude,
-            Longitude = request.LocationCoordinates.Longitude,
-            NumberOfPeople = request.NumberOfPeople,
-            UrgencyLevel = request.UrgencyLevel
-        };
-
-        _evacuationPlanningRepository.AddEvacautionZone(evacuationZone);
-
-        EvacuationZoneResponse response = new EvacuationZoneResponse()
-        {
-            ZoneID = request.ZoneID,
-            LocationCoordinates = new LocationCoordinate()
+            EvacuationZoneBusinessLogic.ValidateEvacuationZoneRequest(request);
+            EvacuationZone evacuationZone = new EvacuationZone()
             {
+                ZoneID = request.ZoneID,
                 Latitude = request.LocationCoordinates.Latitude,
                 Longitude = request.LocationCoordinates.Longitude,
-            },
-            NumberOfPeople = request.NumberOfPeople,
-            UrgencyLevel = request.UrgencyLevel
-        };
+                NumberOfPeople = request.NumberOfPeople,
+                UrgencyLevel = request.UrgencyLevel
+            };
+            evacuationZones.Add(evacuationZone);
+        }
 
-        return response;
+        _evacuationPlanningRepository.AddEvacautionZones(evacuationZones);
+
+        List<EvacuationZoneResponse> responses = evacuationZones.Select(ez => new EvacuationZoneResponse
+        {
+            ZoneID = ez.ZoneID,
+            LocationCoordinates = new LocationCoordinate()
+            {
+                Latitude = ez.Latitude,
+                Longitude = ez.Longitude,
+            },
+            NumberOfPeople = ez.NumberOfPeople,
+            UrgencyLevel = ez.UrgencyLevel
+        }).ToList();
+
+        return responses;
     }
 
-    public VehicleResponse ProcessVehicle(VehicleRequest request)
+    public List<VehicleResponse> ProcessVehicles(List<VehicleRequest> requests)
     {
-        VehicleBusinessLogic.ValidateVehicleRequest(request);
-
-        Vehicle vehicle = new Vehicle()
+        List<Vehicle> vehicles = new List<Vehicle>();
+        foreach (VehicleRequest request in requests)
         {
-            VehicleID = request.VehicleID,
-            Capacity = request.Capacity,
-            Type = request.Type,
-            Latitude = request.LocationCoordinates.Latitude,
-            Longitude = request.LocationCoordinates.Longitude,
-            Speed = request.Speed
-        };
-
-        _evacuationPlanningRepository.AddVehicle(vehicle);
-
-        VehicleResponse response = new VehicleResponse()
-        {
-            VehicleID = request.VehicleID,
-            Capacity = request.Capacity,
-            Type = request.Type,
-            LocationCoordinates = new LocationCoordinate()
+            VehicleBusinessLogic.ValidateVehicleRequest(request);
+            Vehicle vehicle = new Vehicle()
             {
+                VehicleID = request.VehicleID,
+                Capacity = request.Capacity,
+                Type = request.Type,
                 Latitude = request.LocationCoordinates.Latitude,
                 Longitude = request.LocationCoordinates.Longitude,
-            },
-            Speed = request.Speed
-        };
+                Speed = request.Speed
+            };
+            vehicles.Add(vehicle);
+        }
 
-        return response;
+        _evacuationPlanningRepository.AddVehicles(vehicles);
+
+        List<VehicleResponse> responses = vehicles.Select(v => new VehicleResponse
+        {
+            VehicleID = v.VehicleID,
+            Capacity = v.Capacity,
+            Type = v.Type,
+            LocationCoordinates = new LocationCoordinate()
+            {
+                Latitude = v.Latitude,
+                Longitude = v.Longitude,
+            },
+            Speed = v.Speed
+        }).ToList();
+
+        return responses;
     }
 }

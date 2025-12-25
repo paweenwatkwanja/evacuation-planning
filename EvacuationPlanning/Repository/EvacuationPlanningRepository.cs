@@ -11,15 +11,15 @@ public class EvacuationPlanningRepository
         _context = context;
     }
 
-    public void AddEvacautionZone(EvacuationZone evacuationZone)
+    public void AddEvacautionZones(List<EvacuationZone> evacuationZones)
     {
-        _context.EvacuationZone.Add(evacuationZone);
+        _context.EvacuationZone.AddRange(evacuationZones);
         _context.SaveChanges();
     }
 
-    public void AddVehicle(Vehicle vehicle)
+    public void AddVehicles(List<Vehicle> vehicles)
     {
-        _context.Vehicle.Add(vehicle);
+        _context.Vehicle.AddRange(vehicles);
         _context.SaveChanges();
     }
 }

@@ -16,17 +16,41 @@ public class EvacuationPlanningController : ControllerBase
     }
 
     [HttpPost("evacuation-zones")]
-    public IActionResult PostEvacuationZones([FromBody] EvacuationZoneRequest request)
+    public IActionResult PostEvacuationZones([FromBody] List<EvacuationZoneRequest> requests)
     {
-        EvacuationZoneResponse response = _evacuationPlanningBusinessFlow.ProcessEvacuationZone(request);
-        return Ok(response);
+        List<EvacuationZoneResponse> responses = _evacuationPlanningBusinessFlow.ProcessEvacuationZones(requests);
+        return Ok(responses);
     }
 
     [HttpPost("vehicles")]
-    public IActionResult PostVehicles([FromBody] VehicleRequest request)
+    public IActionResult PostVehicles([FromBody] List<VehicleRequest> requests)
     {
-        VehicleResponse response = _evacuationPlanningBusinessFlow.ProcessVehicle(request);
-        return Ok(response);
+        List<VehicleResponse> responses = _evacuationPlanningBusinessFlow.ProcessVehicles(requests);
+        return Ok(responses);
+    }
+
+    [HttpPost("evacuations/plan")]
+    public IActionResult PostEvacuationPlan()
+    {
+        return Ok();
+    }
+
+    [HttpGet("evacuations/status")]
+    public IActionResult GetEvacuationStatus()
+    {
+        return Ok();
+    }
+
+    [HttpPut("evacuations/update")]
+    public IActionResult UpdateEvacuationStatus()
+    {
+        return Ok();
+    }
+
+    [HttpDelete("evacuations/clear")]
+    public IActionResult DeleteEvacuations()
+    {
+        return Ok();
     }
 }
 
