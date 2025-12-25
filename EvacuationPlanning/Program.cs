@@ -3,6 +3,7 @@ using Models;
 using Microsoft.EntityFrameworkCore;
 using BusinessFlow;
 using Repository;
+using Database;
 
 [assembly: ApiController]
 
@@ -14,7 +15,7 @@ builder.Services.AddDbContext<EvacuationPlanningDbContext>(options =>
 
 builder.Services.AddScoped<EvacuationPlanningBusinessFlow>();
 
-builder.Services.AddScoped<EvacuationPlanningRepository>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddControllers();
 

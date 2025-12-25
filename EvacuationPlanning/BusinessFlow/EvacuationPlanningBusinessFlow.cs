@@ -1,18 +1,18 @@
 using BusinessLogic;
-using Repository;
 using Models;
+using Repository;
 
 namespace BusinessFlow;
 
 public class EvacuationPlanningBusinessFlow
 {
-    private readonly EvacuationPlanningRepository _evacuationPlanningRepository;
-    public EvacuationPlanningBusinessFlow(EvacuationPlanningRepository evacuationPlanningRepository)
+    private readonly IUnitOfWork _unitOfWork;
+    public EvacuationPlanningBusinessFlow(IUnitOfWork unitOfWork)
     {
-        _evacuationPlanningRepository = evacuationPlanningRepository;
+        _unitOfWork = unitOfWork;
     }
 
-    public List<EvacuationZoneResponse> ProcessEvacuationZones(List<EvacuationZoneRequest> requests)
+    public async Task<List<EvacuationZoneResponse>> ProcessEvacuationZonesAsync(List<EvacuationZoneRequest> requests)
     {
         List<EvacuationZone> evacuationZones = new List<EvacuationZone>();
         foreach (EvacuationZoneRequest request in requests)
@@ -29,7 +29,8 @@ public class EvacuationPlanningBusinessFlow
             evacuationZones.Add(evacuationZone);
         }
 
-        _evacuationPlanningRepository.AddEvacautionZones(evacuationZones);
+        await _unitOfWork.EvacuationZones.AddRangeAsync(evacuationZones);
+        await _unitOfWork.SaveChangesAsync();
 
         List<EvacuationZoneResponse> responses = evacuationZones.Select(ez => new EvacuationZoneResponse
         {
@@ -46,7 +47,7 @@ public class EvacuationPlanningBusinessFlow
         return responses;
     }
 
-    public List<VehicleResponse> ProcessVehicles(List<VehicleRequest> requests)
+    public async Task<List<VehicleResponse>> ProcessVehiclesAsync(List<VehicleRequest> requests)
     {
         List<Vehicle> vehicles = new List<Vehicle>();
         foreach (VehicleRequest request in requests)
@@ -64,7 +65,8 @@ public class EvacuationPlanningBusinessFlow
             vehicles.Add(vehicle);
         }
 
-        _evacuationPlanningRepository.AddVehicles(vehicles);
+        await _unitOfWork.Vehicles.AddRangeAsync(vehicles);
+        await _unitOfWork.SaveChangesAsync();
 
         List<VehicleResponse> responses = vehicles.Select(v => new VehicleResponse
         {
@@ -80,5 +82,14 @@ public class EvacuationPlanningBusinessFlow
         }).ToList();
 
         return responses;
+    }
+
+    public void CreateEvacuationPlan()
+    {
+        // get evacuation zone
+
+        // sort it by urgency level
+        // if there are more than one, sort by distance
+        // sorted by nunber of people
     }
 }

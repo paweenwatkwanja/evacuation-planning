@@ -16,16 +16,16 @@ public class EvacuationPlanningController : ControllerBase
     }
 
     [HttpPost("evacuation-zones")]
-    public IActionResult PostEvacuationZones([FromBody] List<EvacuationZoneRequest> requests)
+    public async Task<IActionResult> PostEvacuationZonesAsync([FromBody] List<EvacuationZoneRequest> requests)
     {
-        List<EvacuationZoneResponse> responses = _evacuationPlanningBusinessFlow.ProcessEvacuationZones(requests);
+        List<EvacuationZoneResponse> responses = await _evacuationPlanningBusinessFlow.ProcessEvacuationZonesAsync(requests);
         return Ok(responses);
     }
 
     [HttpPost("vehicles")]
-    public IActionResult PostVehicles([FromBody] List<VehicleRequest> requests)
+    public async Task<IActionResult> PostVehiclesAsync([FromBody] List<VehicleRequest> requests)
     {
-        List<VehicleResponse> responses = _evacuationPlanningBusinessFlow.ProcessVehicles(requests);
+        List<VehicleResponse> responses = await _evacuationPlanningBusinessFlow.ProcessVehiclesAsync(requests);
         return Ok(responses);
     }
 

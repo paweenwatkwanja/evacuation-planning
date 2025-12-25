@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Models;
 
-namespace Models;
+namespace Database;
 
 public class EvacuationPlanningDbContext : DbContext
 {
