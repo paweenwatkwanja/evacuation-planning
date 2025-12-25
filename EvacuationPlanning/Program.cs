@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Models;
 using Microsoft.EntityFrameworkCore;
+using BusinessFlow;
+using Repository;
 
 [assembly: ApiController]
 
@@ -9,6 +11,11 @@ var builder = WebApplication.CreateBuilder(args);
 var _connectionString = builder.Configuration.GetConnectionString("PostgresqlConnection");
 builder.Services.AddDbContext<EvacuationPlanningDbContext>(options =>
     options.UseNpgsql(_connectionString));
+
+builder.Services.AddScoped<EvacuationPlanningBusinessFlow>();
+
+builder.Services.AddScoped<EvacuationPlanningRepository>();
+
 builder.Services.AddControllers();
 
 var app = builder.Build();

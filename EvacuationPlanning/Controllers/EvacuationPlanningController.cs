@@ -2,42 +2,25 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using Models;
+using BusinessFlow;
 
 [Route("/api/")]
 [ApiController]
 public class EvacuationPlanningController : ControllerBase
 {
-    private readonly EvacuationPlanningDbContext _context;
+    private readonly EvacuationPlanningBusinessFlow _evacuationPlanningBusinessFlow;
 
-    public EvacuationPlanningController(EvacuationPlanningDbContext context)
+    public EvacuationPlanningController(EvacuationPlanningBusinessFlow evacuationPlanningBusinessFlow)
     {
-        _context = context;
+        _evacuationPlanningBusinessFlow = evacuationPlanningBusinessFlow;
     }
 
-
     [HttpPost("evacuation-zones")]
-    public IActionResult PostEvacuationZones()
+    public IActionResult PostEvacuationZones([FromBody] EvacuationZoneRequest request)
     {
-        LocationCoordinate locationCoordinate = new LocationCoordinate()
-        {
-            Latitude = 34.0522,
-            Longitude = -118.2437
-        };
-        _context.LocationCoordinate.Add(locationCoordinate);
-        _context.SaveChanges();
-
-        EvacuationZone evacuationZone = new EvacuationZone()
-        {
-            ZoneID = "Z1",
-            LocationCoordinateID = locationCoordinate.Id,
-            NumberOfPeople = 1500,
-            UrgencyLevel = 3
-        };
-
-        _context.EvacuationZone.Add(evacuationZone);
-        _context.SaveChanges();
-
-        return Ok(evacuationZone);
+        Console.WriteLine("Controller");
+        EvacuationZoneResponse response = _evacuationPlanningBusinessFlow.ProcessEvacuationZone(request);
+        return Ok(response);
     }
 }
 
