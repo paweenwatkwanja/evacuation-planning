@@ -18,19 +18,26 @@ public class EvacuationPlanningController : ControllerBase
     [HttpPost("evacuation-zones")]
     public IActionResult PostEvacuationZones()
     {
-        EvacuationZone EvacuationZone = new EvacuationZone()
+        LocationCoordinate locationCoordinate = new LocationCoordinate()
         {
-            Id = 1,
+            Latitude = 34.0522,
+            Longitude = -118.2437
+        };
+        _context.LocationCoordinate.Add(locationCoordinate);
+        _context.SaveChanges();
+
+        EvacuationZone evacuationZone = new EvacuationZone()
+        {
             ZoneID = "Z1",
-            LocationCoordinate = new LocationCoordinate() { Id = 1, Latitude = 34.0522, Longitude = -118.2437 },
+            LocationCoordinateID = locationCoordinate.Id,
             NumberOfPeople = 1500,
             UrgencyLevel = 3
         };
 
-        _context.EvacuationZone.Add(EvacuationZone);
+        _context.EvacuationZone.Add(evacuationZone);
         _context.SaveChanges();
 
-        return Ok(EvacuationZone);
+        return Ok(evacuationZone);
     }
 }
 

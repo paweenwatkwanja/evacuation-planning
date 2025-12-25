@@ -16,6 +16,7 @@ var app = builder.Build();
 await using var scope = app.Services.CreateAsyncScope();
 var dbContext = scope.ServiceProvider.GetRequiredService<EvacuationPlanningDbContext>();
 var canConnect = await dbContext.Database.CanConnectAsync();
+dbContext.Database.Migrate();
 Console.WriteLine($"Database connection successful: {canConnect}");
 
 app.UseRouting();
