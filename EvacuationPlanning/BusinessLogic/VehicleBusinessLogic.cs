@@ -2,9 +2,9 @@ using Models;
 
 namespace BusinessLogic;
 
-public static class EvacuationZoneBusinessLogic
+public static class VehicleBusinessLogic
 {
-    public static void ValidateEvacuationZoneRequest(EvacuationZoneRequest request)
+    public static void ValidateVehicleRequest(VehicleRequest request)
     {
         Console.WriteLine("BusinessLogic");
         if (request == null)
@@ -12,9 +12,19 @@ public static class EvacuationZoneBusinessLogic
             throw new ArgumentException("Request cannot be null or empty");
         }
 
-        if (string.IsNullOrEmpty(request.ZoneID))
+        if (string.IsNullOrEmpty(request.VehicleID))
         {
-            throw new ArgumentException("ZoneID cannot be null or empty");
+            throw new ArgumentException("VehicleID cannot be null or empty");
+        }
+
+        if (request.Capacity < 0)
+        {
+            throw new ArgumentException("Capacity cannot be negative");
+        }
+
+         if (string.IsNullOrEmpty(request.Type))
+        {
+            throw new ArgumentException("Type cannot be null or empty");
         }
 
         if (request.LocationCoordinates.Latitude < -90 || request.LocationCoordinates.Latitude > 90)
@@ -27,14 +37,9 @@ public static class EvacuationZoneBusinessLogic
             throw new ArgumentException("Longitude must be between -180 and 180");
         }
 
-        if (request.NumberOfPeople < 0)
+         if (request.Speed < 0)
         {
-            throw new ArgumentException("NumberOfPeople cannot be negative");
-        }
-
-        if (request.UrgencyLevel < 1 || request.UrgencyLevel > 5)
-        {
-            throw new ArgumentException("UrgencyLevel must be between 1 and 5");
+            throw new ArgumentException("Speed cannot be negative");
         }
     }
 }

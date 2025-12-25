@@ -11,14 +11,15 @@ public class EvacuationZone
     [Column("zone_id")]
     public string ZoneID { get; set; }
 
-    [Column("location_coordinate_id")]
-    public long LocationCoordinateID { get; set; }
+    [Column("latitude")]
+    public double Latitude { get; set; }
 
-    [ForeignKey(nameof(LocationCoordinateID))]
-    public LocationCoordinate LocationCoordinate { get; init; }
+    [Column("longitude")]
+    public double Longitude { get; set; }
 
     [Column("number_of_people")]
     public int NumberOfPeople { get; set; }
+
     [Column("urgency_level")]
     public int UrgencyLevel { get; set; }
 }

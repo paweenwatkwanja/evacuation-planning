@@ -17,18 +17,11 @@ public class EvacuationPlanningBusinessFlow
         Console.WriteLine("BusinessFlow");
         EvacuationZoneBusinessLogic.ValidateEvacuationZoneRequest(request);
 
-        LocationCoordinate locationCoordinate = new LocationCoordinate()
-        {
-            Latitude = request.Latitude,
-            Longitude = request.Longitude
-        };
-
-        _evacuationPlanningRepository.AddLocationCoordinate(locationCoordinate);
-
         EvacuationZone evacuationZone = new EvacuationZone()
         {
             ZoneID = request.ZoneID,
-            LocationCoordinateID = locationCoordinate.Id,
+            Latitude = request.LocationCoordinates.Latitude,
+            Longitude = request.LocationCoordinates.Longitude,
             NumberOfPeople = request.NumberOfPeople,
             UrgencyLevel = request.UrgencyLevel
         };
@@ -38,21 +31,47 @@ public class EvacuationPlanningBusinessFlow
         EvacuationZoneResponse response = new EvacuationZoneResponse()
         {
             ZoneID = request.ZoneID,
-            LocationCoordinate = new LocationCoordinate()
+            LocationCoordinates = new LocationCoordinate()
             {
-                Latitude = request.Latitude,
-                Longitude = request.Longitude
+                Latitude = request.LocationCoordinates.Latitude,
+                Longitude = request.LocationCoordinates.Longitude,
             },
             NumberOfPeople = request.NumberOfPeople,
             UrgencyLevel = request.UrgencyLevel
         };
 
-       return response;
+        return response;
     }
 
+    public VehicleResponse ProcessVehicle(VehicleRequest request)
+    {
+        VehicleBusinessLogic.ValidateVehicleRequest(request);
 
-    // call repository methods
+        Vehicle vehicle = new Vehicle()
+        {
+            VehicleID = request.VehicleID,
+            Capacity = request.Capacity,
+            Type = request.Type,
+            Latitude = request.LocationCoordinates.Latitude,
+            Longitude = request.LocationCoordinates.Longitude,
+            Speed = request.Speed
+        };
 
-    // handle responses
+        _evacuationPlanningRepository.AddVehicle(vehicle);
 
+        VehicleResponse response = new VehicleResponse()
+        {
+            VehicleID = request.VehicleID,
+            Capacity = request.Capacity,
+            Type = request.Type,
+            LocationCoordinates = new LocationCoordinate()
+            {
+                Latitude = request.LocationCoordinates.Latitude,
+                Longitude = request.LocationCoordinates.Longitude,
+            },
+            Speed = request.Speed
+        };
+
+        return response;
+    }
 }

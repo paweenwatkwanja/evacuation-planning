@@ -18,8 +18,14 @@ public class EvacuationPlanningController : ControllerBase
     [HttpPost("evacuation-zones")]
     public IActionResult PostEvacuationZones([FromBody] EvacuationZoneRequest request)
     {
-        Console.WriteLine("Controller");
         EvacuationZoneResponse response = _evacuationPlanningBusinessFlow.ProcessEvacuationZone(request);
+        return Ok(response);
+    }
+
+    [HttpPost("vehicles")]
+    public IActionResult PostVehicles([FromBody] VehicleRequest request)
+    {
+        VehicleResponse response = _evacuationPlanningBusinessFlow.ProcessVehicle(request);
         return Ok(response);
     }
 }

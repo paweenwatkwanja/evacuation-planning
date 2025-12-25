@@ -10,5 +10,5 @@ public class EvacuationPlanningDbContext : DbContext
     }
 
     public DbSet<EvacuationZone> EvacuationZone { get; set; }
-    public DbSet<LocationCoordinate> LocationCoordinate { get; set; }
+    public DbSet<Vehicle> Vehicle { get; set; }
 }
