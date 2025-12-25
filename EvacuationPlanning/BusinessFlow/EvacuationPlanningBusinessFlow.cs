@@ -1,6 +1,7 @@
 using BusinessLogic;
 using Models;
 using Repository;
+using System.Linq.Expressions;
 
 namespace BusinessFlow;
 
@@ -84,12 +85,22 @@ public class EvacuationPlanningBusinessFlow
         return responses;
     }
 
-    public void CreateEvacuationPlan()
+    public async Task<List<EvacuationZone>> CreateEvacuationPlanAsync()
     {
         // get evacuation zone
-
+        IEnumerable<EvacuationZone> evacuationZones = await _unitOfWork.EvacuationZones.GetAllAsync();
+        
         // sort it by urgency level
-        // if there are more than one, sort by distance
+        // if there are more than one, sort by distance 
         // sorted by nunber of people
+
+        // TODO : if there are more than one, sort by distance 
+        evacuationZones = evacuationZones.OrderByDescending(o => o.UrgencyLevel).ThenByDescending(t => t.NumberOfPeople);
+      
+
+        // DONE : get vehicle
+        IEnumerable<Vehicle> vehicles = await _unitOfWork.Vehicles.GetAllAsync();
+
+        return evacuationZones.ToList();
     }
 }
