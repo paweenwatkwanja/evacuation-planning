@@ -9,10 +9,10 @@ public class EvacuationPlan
     public long Id { get; set; }
 
     [Column("zone_id")]
-    public long ZoneID { get; set; }
+    public string ZoneID { get; set; }
 
     [Column("vehicle_id")]
-    public long VehicleID { get; set; }
+    public string VehicleID { get; set; }
 
     [Column("eta")]
     public int ETA { get; set; }

@@ -32,7 +32,7 @@ public class EvacuationPlanningController : ControllerBase
     [HttpPost("evacuations/plan")]
     public async Task<IActionResult> PostEvacuationPlanAsync()
     {
-        List<EvacuationZone> responses = await _evacuationPlanningBusinessFlow.CreateEvacuationPlanAsync();
+        List<EvacuationPlan> responses = await _evacuationPlanningBusinessFlow.CreateEvacuationPlanAsync();
         return Ok(responses);
     }
 

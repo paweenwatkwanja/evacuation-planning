@@ -2,6 +2,7 @@ using BusinessLogic;
 using Models;
 using Repository;
 using System.Linq.Expressions;
+using Helpers;
 
 namespace BusinessFlow;
 
@@ -85,22 +86,36 @@ public class EvacuationPlanningBusinessFlow
         return responses;
     }
 
-    public async Task<List<EvacuationZone>> CreateEvacuationPlanAsync()
+    public async Task<List<EvacuationPlan>> CreateEvacuationPlanAsync()
     {
-        // get evacuation zone
         IEnumerable<EvacuationZone> evacuationZones = await _unitOfWork.EvacuationZones.GetAllAsync();
-        
-        // sort it by urgency level
-        // if there are more than one, sort by distance 
-        // sorted by nunber of people
-
-        // TODO : if there are more than one, sort by distance 
-        evacuationZones = evacuationZones.OrderByDescending(o => o.UrgencyLevel).ThenByDescending(t => t.NumberOfPeople);
-      
-
-        // DONE : get vehicle
         IEnumerable<Vehicle> vehicles = await _unitOfWork.Vehicles.GetAllAsync();
 
-        return evacuationZones.ToList();
+        evacuationZones = evacuationZones.OrderByDescending(o => o.UrgencyLevel);
+        List<Vehicle> vehiclesList = vehicles.OrderByDescending(o => o.Capacity).ToList();
+
+        List<EvacuationPlan> evacuationPlans = new List<EvacuationPlan>();
+        foreach (EvacuationZone evacuationZone in evacuationZones)
+        {
+            Vehicle vehicle = new Vehicle();
+            vehicle = vehiclesList.LastOrDefault(f => f.Capacity >= evacuationZone.NumberOfPeople);
+            if (vehicle == null)
+            {
+                vehiclesList.FirstOrDefault(f => f.Capacity < evacuationZone.NumberOfPeople);
+            }
+
+            int remainingEvacuee = evacuationZone.NumberOfPeople - vehicle.Capacity;
+            EvacuationPlan evacuationPlan = new EvacuationPlan()
+            {
+                ZoneID = evacuationZone.ZoneID,
+                VehicleID = vehicle.VehicleID,
+                NumberOfPeople = (remainingEvacuee <= 0) ? evacuationZone.NumberOfPeople : vehicle.Capacity,
+                ETA = (int)DistanceCalculator.CalculateDistance(vehicle.Latitude, vehicle.Longitude, evacuationZone.Latitude, evacuationZone.Longitude) * 60 / vehicle.Speed
+            };
+            vehiclesList.RemoveAll(v => v.VehicleID == vehicle.VehicleID);
+            evacuationPlans.Add(evacuationPlan);
+        }
+
+        return evacuationPlans.ToList();
     }
 }
