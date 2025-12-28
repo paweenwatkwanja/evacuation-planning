@@ -9,20 +9,23 @@ public class EvacuationPlan
     public long Id { get; set; }
 
     [Column("zone_id")]
-    public string ZoneID { get; set; }
+    public long ZoneID { get; set; }
 
     [Column("vehicle_id")]
-    public string VehicleID { get; set; }
+    public long VehicleID { get; set; }
 
     [Column("eta")]
-    public int ETA { get; set; }
+    public double ETA { get; set; }
 
     [Column("number_of_people")]
     public int NumberOfPeople { get; set; }
 
     [ForeignKey("ZoneID")] 
-    public EvacuationZone EcavuationZone { get; set; } 
+    public EvacuationZone EvacuationZone { get; set; } 
     
     [ForeignKey("VehicleID")] 
     public Vehicle Vehicle { get; set; } 
+
+    [NotMapped]
+    public int RemainingPeople  { get; set; }
 }

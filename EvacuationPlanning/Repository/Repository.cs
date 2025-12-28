@@ -15,12 +15,19 @@ public class Repository<T> : IRepository<T> where T : class
         _dbSet = dbContext.Set<T>();
     }
 
-    public async Task<IEnumerable<T>> GetAllAsync()
+    public async Task<List<T>> GetAllAsync(params string[] includes)
     {
-        return await _dbSet.ToListAsync();
+        IQueryable<T> query = _dbSet;
+
+        foreach (var include in includes)
+        {
+            query = query.Include(include);
+        }
+
+        return await query.ToListAsync();
     }
 
-    public async Task<IEnumerable<T>> FindAsync(
+    public async Task<List<T>> FindAsync(
          Expression<Func<T, bool>> predicate,
          Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null)
     {
@@ -39,7 +46,7 @@ public class Repository<T> : IRepository<T> where T : class
         await _dbSet.AddAsync(entity);
     }
 
-    public async Task AddRangeAsync(IEnumerable<T> entities)
+    public async Task AddRangeAsync(List<T> entities)
     {
         await _dbSet.AddRangeAsync(entities);
     }
@@ -49,7 +56,7 @@ public class Repository<T> : IRepository<T> where T : class
         _dbSet.Update(entity);
     }
 
-    public void DeleteRange(IEnumerable<T> entities)
+    public void DeleteRange(List<T> entities)
     {
         _dbSet.RemoveRange(entities);
     }

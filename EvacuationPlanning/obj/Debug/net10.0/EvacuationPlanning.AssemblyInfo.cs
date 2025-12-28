@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("EvacuationPlanning")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a79c8b80bbe91159c41b410418e63d4285d1bb90")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+703ea4e74396db25cda6ab560e5c1bbb511b28d8")]
 [assembly: System.Reflection.AssemblyProductAttribute("EvacuationPlanning")]
 [assembly: System.Reflection.AssemblyTitleAttribute("EvacuationPlanning")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

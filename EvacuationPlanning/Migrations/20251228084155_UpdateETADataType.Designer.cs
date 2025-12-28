@@ -2,6 +2,7 @@
 using Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EvacuationPlanning.Migrations
 {
     [DbContext(typeof(EvacuationPlanningDbContext))]
-    partial class EvacuationPlanningDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251228084155_UpdateETADataType")]
+    partial class UpdateETADataType
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -90,40 +93,6 @@ namespace EvacuationPlanning.Migrations
                     b.ToTable("evacuation_zone");
                 });
 
-            modelBuilder.Entity("Models.Log", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<int>("RemainingPeople")
-                        .HasColumnType("integer")
-                        .HasColumnName("remaining_people");
-
-                    b.Property<int>("TotalEvacuated")
-                        .HasColumnType("integer")
-                        .HasColumnName("total_evacuated");
-
-                    b.Property<long>("VehicleID")
-                        .HasColumnType("bigint")
-                        .HasColumnName("vehicle_id");
-
-                    b.Property<long>("ZoneID")
-                        .HasColumnType("bigint")
-                        .HasColumnName("zone_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("VehicleID");
-
-                    b.HasIndex("ZoneID");
-
-                    b.ToTable("log");
-                });
-
             modelBuilder.Entity("Models.Vehicle", b =>
                 {
                     b.Property<long>("Id")
@@ -172,32 +141,13 @@ namespace EvacuationPlanning.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Models.EvacuationZone", "EvacuationZone")
+                    b.HasOne("Models.EvacuationZone", "EcavuationZone")
                         .WithMany()
                         .HasForeignKey("ZoneID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("EvacuationZone");
-
-                    b.Navigation("Vehicle");
-                });
-
-            modelBuilder.Entity("Models.Log", b =>
-                {
-                    b.HasOne("Models.Vehicle", "Vehicle")
-                        .WithMany()
-                        .HasForeignKey("VehicleID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Models.EvacuationZone", "EvacuationZone")
-                        .WithMany()
-                        .HasForeignKey("ZoneID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("EvacuationZone");
+                    b.Navigation("EcavuationZone");
 
                     b.Navigation("Vehicle");
                 });

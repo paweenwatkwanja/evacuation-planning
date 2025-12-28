@@ -37,9 +37,11 @@ public class EvacuationPlanningController : ControllerBase
     }
 
     [HttpGet("evacuations/status")]
-    public IActionResult GetEvacuationStatus()
+    public async Task<IActionResult> GetEvacuationStatusAsync()
     {
-        return Ok();
+        Console.WriteLine("Contoller");
+        List<EvacuationStatus> responses = await _evacuationPlanningBusinessFlow.GetEvacuationStatusAsync();
+        return Ok(responses);
     }
 
     [HttpPut("evacuations/update")]

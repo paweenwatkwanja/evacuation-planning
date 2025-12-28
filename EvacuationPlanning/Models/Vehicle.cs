@@ -27,5 +27,5 @@ public class Vehicle
     public int Speed { get; set; }
 
     [NotMapped]
-    public int Distance  { get; set; }
+    public double Distance  { get; set; }
 }
