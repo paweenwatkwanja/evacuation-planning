@@ -3,6 +3,7 @@ using Models;
 using Repository;
 using System.Linq.Expressions;
 using Helpers;
+using System.Security.Cryptography.X509Certificates;
 
 namespace BusinessFlow;
 
@@ -14,6 +15,7 @@ public class EvacuationPlanningBusinessFlow
         _unitOfWork = unitOfWork;
     }
 
+    // EVACUTION ZONE
     public async Task<List<EvacuationZoneResponse>> ProcessEvacuationZonesAsync(List<EvacuationZoneRequest> requests)
     {
         List<EvacuationZone> evacuationZones = new List<EvacuationZone>();
@@ -49,6 +51,7 @@ public class EvacuationPlanningBusinessFlow
         return responses;
     }
 
+    // VEHICLE
     public async Task<List<VehicleResponse>> ProcessVehiclesAsync(List<VehicleRequest> requests)
     {
         List<Vehicle> vehicles = new List<Vehicle>();
@@ -86,23 +89,48 @@ public class EvacuationPlanningBusinessFlow
         return responses;
     }
 
-    public async Task<List<EvacuationPlan>> CreateEvacuationPlanAsync()
+    //EVACUATION PLAN
+    public async Task<List<EvacuationPlan>> ProcessEvacuationPlanAsync()
     {
-        IEnumerable<EvacuationZone> evacuationZones = await _unitOfWork.EvacuationZones.GetAllAsync();
-        IEnumerable<Vehicle> vehicles = await _unitOfWork.Vehicles.GetAllAsync();
+        IEnumerable<EvacuationZone> evacuationZones = await getEvacuationZonesAsync();
+        if (evacuationZones.Count <= 0)
+        {
+            // hadle here
+        }
 
-        evacuationZones = evacuationZones.OrderByDescending(o => o.UrgencyLevel);
-        List<Vehicle> vehiclesList = vehicles.OrderByDescending(o => o.Capacity).ToList();
+        IEnumerable<Vehicle> vehicles = await getAvailableVehiclesAsync();
+        if (vehicles.Count <= 0)
+        {
+            // hadle here
+        }
+
+        List<EvacuationPlan> evacuationPlans = prepareDataAndCreateEvacuationPlans(evacuationZones, vehicles);
+        await AddEvacuationPlanAsync(evacuationPlans);
+
+        return evacuationPlans.ToList();
+    }
+
+    private async IEnumerable<EvacuationZone> getEvacuationZonesAsync()
+    {
+        return await _unitOfWork.EvacuationZones.GetAllAsync();
+    }
+
+    private async IEnumerable<Vehicle> getAvailableVehiclesAsync()
+    {
+        // filter unavailable vehicle
+        // get in use vehicles from cache then create a predicate vehicle NOT in cache
+        return await _unitOfWork.Vehicles.GetAllAsync();
+    }
+
+    private List<EvacuationPlan> prepareDataAndCreateEvacuationPlans(IEnumerable<EvacuationZone> sortedEvacuationZones, IEnumerable<Vehicle> vehicles)
+    {
+        sortedEvacuationZones = sortedEvacuationZones.OrderByDescending(o => o.UrgencyLevel);
+        vehicles = vehicles.OrderByDescending(o => o.Capacity).ToList();
 
         List<EvacuationPlan> evacuationPlans = new List<EvacuationPlan>();
-        foreach (EvacuationZone evacuationZone in evacuationZones)
+        foreach (EvacuationZone evacuationZone in sortedEvacuationZones)
         {
-            Vehicle vehicle = new Vehicle();
-            vehicle = vehiclesList.LastOrDefault(f => f.Capacity >= evacuationZone.NumberOfPeople);
-            if (vehicle == null)
-            {
-                vehiclesList.FirstOrDefault(f => f.Capacity < evacuationZone.NumberOfPeople);
-            }
+            Vehicle vehicle = EvacuationPlanBusinessLogic.FindAppropriateVehicle(evacuationZone.NumberOfPeople, vehicles);
 
             int remainingEvacuee = evacuationZone.NumberOfPeople - vehicle.Capacity;
             EvacuationPlan evacuationPlan = new EvacuationPlan()
@@ -110,12 +138,18 @@ public class EvacuationPlanningBusinessFlow
                 ZoneID = evacuationZone.ZoneID,
                 VehicleID = vehicle.VehicleID,
                 NumberOfPeople = (remainingEvacuee <= 0) ? evacuationZone.NumberOfPeople : vehicle.Capacity,
-                ETA = (int)DistanceCalculator.CalculateDistance(vehicle.Latitude, vehicle.Longitude, evacuationZone.Latitude, evacuationZone.Longitude) * 60 / vehicle.Speed
+                ETA = (int)vehicle.Distance * 60 / vehicle.Speed
             };
-            vehiclesList.RemoveAll(v => v.VehicleID == vehicle.VehicleID);
             evacuationPlans.Add(evacuationPlan);
-        }
 
-        return evacuationPlans.ToList();
+            vehicles.RemoveAll(v => v.VehicleID == vehicle.VehicleID);
+        }
+        return evacuationPlans;
+    }
+
+    private async void AddEvacuationPlanAsync(List<EvacuationPlan> evacuationPlans)
+    {
+        await _unitOfWork.EvacuationPlans.AddRangeAsync(evacuationPlans);
+        await _unitOfWork.SaveChangesAsync();
     }
 }

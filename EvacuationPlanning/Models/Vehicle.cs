@@ -25,4 +25,7 @@ public class Vehicle
 
     [Column("speed")]
     public int Speed { get; set; }
+
+    [NotMapped]
+    public int Distance  { get; set; }
 }
