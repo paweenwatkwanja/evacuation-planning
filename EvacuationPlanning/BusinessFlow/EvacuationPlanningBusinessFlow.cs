@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using Helpers;
 using System.Security.Cryptography.X509Certificates;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace BusinessFlow;
 
@@ -106,7 +107,9 @@ public class EvacuationPlanningBusinessFlow
         }
 
         List<EvacuationPlan> evacuationPlans = prepareDataAndCreateEvacuationPlans(evacuationZones, vehicles);
-        await AddEvacuationPlanAsync(evacuationPlans);
+        await addEvacuationPlanAsync(evacuationPlans);
+        List<EvacuationStatus> evacuationStatuses = convertEvacuationPlansToEvacuationStatuses(evacuationPlans);
+        await addEvacuationStatusesAsync(evacuationStatuses);
         List<Log> logs = convertEvacuationPlansToLogs(evacuationPlans);
         await addLogsAsync(logs);
 
@@ -151,10 +154,32 @@ public class EvacuationPlanningBusinessFlow
         return evacuationPlans;
     }
 
-    private async Task AddEvacuationPlanAsync(List<EvacuationPlan> evacuationPlans)
+    private async Task addEvacuationPlanAsync(List<EvacuationPlan> evacuationPlans)
     {
         await _unitOfWork.EvacuationPlans.AddRangeAsync(evacuationPlans);
         await _unitOfWork.SaveChangesAsync();
+    }
+
+    private async Task addEvacuationStatusesAsync(List<EvacuationStatus> evacuationStatuses)
+    {
+        await _unitOfWork.EvacuationStatuses.AddRangeAsync(evacuationStatuses);
+        await _unitOfWork.SaveChangesAsync();
+    }
+
+    private List<EvacuationStatus> convertEvacuationPlansToEvacuationStatuses(List<EvacuationPlan> evacuationPlans)
+    {
+        List<EvacuationStatus> evacuationStatuses = new List<EvacuationStatus>();
+        foreach (EvacuationPlan plan in evacuationPlans)
+        {
+            EvacuationStatus log = new EvacuationStatus()
+            {
+                ZoneID = plan.EvacuationZone.Id,
+                TotalEvacuated = 0,
+                RemainingPeople = plan.EvacuationZone.NumberOfPeople,
+                LastVehicleUsed = plan.Vehicle.Id };
+            evacuationStatuses.Add(log);
+        }
+        return evacuationStatuses;
     }
 
     private List<Log> convertEvacuationPlansToLogs(List<EvacuationPlan> evacuationPlans)
@@ -164,10 +189,10 @@ public class EvacuationPlanningBusinessFlow
         {
             Log log = new Log()
             {
-                ZoneID = plan.EvacuationZone.Id,
+                EvacuationPlanID = plan.Id,
                 VehicleID = plan.Vehicle.Id,
-                TotalEvacuated = plan.NumberOfPeople,
-                RemainingPeople = plan.RemainingPeople
+                ETA = plan.ETA,
+                IsEvacuationCompleted = false
             };
             logs.Add(log);
         }
@@ -182,19 +207,7 @@ public class EvacuationPlanningBusinessFlow
 
     public async Task<List<EvacuationStatus>> GetEvacuationStatusAsync()
     {
-        List<Log> logs = await _unitOfWork.Logs.GetAllAsync("EvacuationZone", "Vehicle");
-        List<EvacuationStatus> evacuationStatuses = new List<EvacuationStatus>();
-        foreach (Log log in logs)
-        {
-            EvacuationStatus evacuationStatus = new EvacuationStatus()
-            {
-                ZoneID = log.EvacuationZone.ZoneID,
-                TotalEvacuated = log.TotalEvacuated,
-                RemainingPeople = log.RemainingPeople,
-                LastVehicleUsed = log.Vehicle.Id
-            };
-            evacuationStatuses.Add(evacuationStatus);
-        }
+        List<EvacuationStatus> evacuationStatuses = await _unitOfWork.EvacuationStatuses.GetAllAsync("EvacuationZone", "Vehicle");
         return evacuationStatuses;
     }
 }

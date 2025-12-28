@@ -14,12 +14,14 @@ public class UnitOfWork : IUnitOfWork
         EvacuationZones = new Repository<EvacuationZone>(dbContext);
         Vehicles = new Repository<Vehicle>(dbContext);
         EvacuationPlans = new Repository<EvacuationPlan>(dbContext);
+        EvacuationStatuses = new Repository<EvacuationStatus>(dbContext);
         Logs = new Repository<Log>(dbContext);
     }
 
     public IRepository<EvacuationZone> EvacuationZones { get; }
     public IRepository<Vehicle> Vehicles { get; }
     public IRepository<EvacuationPlan> EvacuationPlans { get; }
+    public IRepository<EvacuationStatus> EvacuationStatuses { get; }
     public IRepository<Log> Logs { get; }
 
     public async Task<int> SaveChangesAsync()

@@ -13,5 +13,6 @@ public class EvacuationPlanningDbContext : DbContext
     public DbSet<EvacuationZone> EvacuationZone { get; set; }
     public DbSet<Vehicle> Vehicle { get; set; }
     public DbSet<EvacuationPlan> EvacuationPlan { get; set; }
+    public DbSet<EvacuationStatus> EvacuationStatus { get; set; }
     public DbSet<Log> Log { get; set; }
 }
