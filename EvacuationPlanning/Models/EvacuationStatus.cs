@@ -9,7 +9,7 @@ public class EvacuationStatus
     [Column("id")]
     public long Id { get; set; }
 
-   [Column("zone_id")]
+    [Column("zone_id")]
     public long ZoneID { get; set; }
 
     [Column("total_evacuated")]
@@ -17,7 +17,7 @@ public class EvacuationStatus
 
     [Column("remaining_people")]
     public int RemainingPeople { get; set; }
-    
+
     [Column("last_vehicle_used")]
     public long LastVehicleUsed { get; set; }
 
@@ -25,6 +25,6 @@ public class EvacuationStatus
     [JsonIgnore]
     public Vehicle Vehicle { get; set; }
 
-    [ForeignKey("ZoneID")] 
-    public EvacuationZone EvacuationZone { get; set; } 
+    [ForeignKey("ZoneID")]
+    public EvacuationZone EvacuationZone { get; set; }
 }

@@ -2,6 +2,7 @@
 using Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EvacuationPlanning.Migrations
 {
     [DbContext(typeof(EvacuationPlanningDbContext))]
-    partial class EvacuationPlanningDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251228180135_RemovePlanInEvacuationStatus")]
+    partial class RemovePlanInEvacuationStatus
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -137,6 +140,9 @@ namespace EvacuationPlanning.Migrations
                         .HasColumnType("double precision")
                         .HasColumnName("eta");
 
+                    b.Property<long>("EvacuationPlanID")
+                        .HasColumnType("bigint");
+
                     b.Property<bool>("IsEvacuationCompleted")
                         .HasColumnType("boolean")
                         .HasColumnName("is_evacuation_completed");
@@ -146,6 +152,8 @@ namespace EvacuationPlanning.Migrations
                         .HasColumnName("vehicle_id");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("EvacuationPlanID");
 
                     b.HasIndex("VehicleID");
 
@@ -232,11 +240,19 @@ namespace EvacuationPlanning.Migrations
 
             modelBuilder.Entity("Models.Log", b =>
                 {
+                    b.HasOne("Models.EvacuationPlan", "EvacuationPlan")
+                        .WithMany()
+                        .HasForeignKey("EvacuationPlanID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Models.Vehicle", "Vehicle")
                         .WithMany()
                         .HasForeignKey("VehicleID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("EvacuationPlan");
 
                     b.Navigation("Vehicle");
                 });

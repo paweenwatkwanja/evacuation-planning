@@ -41,6 +41,20 @@ public class Repository<T> : IRepository<T> where T : class
         return await query.ToListAsync();
     }
 
+    public async Task<T?> FindOneAsync(
+    Expression<Func<T, bool>> predicate,
+    Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null)
+    {
+        var query = _dbSet.Where(predicate);
+
+        if (orderBy != null)
+        {
+            query = orderBy(query);
+        }
+
+        return await query.FirstOrDefaultAsync();
+    }
+
     public async Task AddAsync(T entity)
     {
         await _dbSet.AddAsync(entity);
@@ -56,8 +70,8 @@ public class Repository<T> : IRepository<T> where T : class
         _dbSet.Update(entity);
     }
 
-    public void DeleteRange(List<T> entities)
+    public async Task DeleteAllAsync()
     {
-        _dbSet.RemoveRange(entities);
+        await _dbSet.ExecuteDeleteAsync();
     }
 }

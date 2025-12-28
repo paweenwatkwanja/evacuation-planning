@@ -6,6 +6,7 @@ using Helpers;
 using System.Security.Cryptography.X509Certificates;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.ComponentModel;
 
 namespace BusinessFlow;
 
@@ -176,7 +177,8 @@ public class EvacuationPlanningBusinessFlow
                 ZoneID = plan.EvacuationZone.Id,
                 TotalEvacuated = 0,
                 RemainingPeople = plan.EvacuationZone.NumberOfPeople,
-                LastVehicleUsed = plan.Vehicle.Id };
+                LastVehicleUsed = plan.Vehicle.Id
+            };
             evacuationStatuses.Add(log);
         }
         return evacuationStatuses;
@@ -189,7 +191,6 @@ public class EvacuationPlanningBusinessFlow
         {
             Log log = new Log()
             {
-                EvacuationPlanID = plan.Id,
                 VehicleID = plan.Vehicle.Id,
                 ETA = plan.ETA,
                 IsEvacuationCompleted = false
@@ -209,5 +210,60 @@ public class EvacuationPlanningBusinessFlow
     {
         List<EvacuationStatus> evacuationStatuses = await _unitOfWork.EvacuationStatuses.GetAllAsync("EvacuationZone", "Vehicle");
         return evacuationStatuses;
+    }
+
+    public async Task UpdateEvacuationStatusAsync(int id, EvacuationStatusUpdateRequest request)
+    {
+        // validate request
+        EvacuationStatus evacuationStatus = await _unitOfWork.EvacuationStatuses.FindOneAsync(p => p.Id == id);
+        if (evacuationStatus == null)
+        {
+            // handle
+        }
+
+        Vehicle vehicle = await _unitOfWork.Vehicles.FindOneAsync(p => p.VehicleID == request.VehicleID);
+        if (vehicle == null)
+        {
+            // handle
+        }
+
+        // UPDATE
+        evacuationStatus.TotalEvacuated += request.NumberOfEvacuee;
+        evacuationStatus.RemainingPeople -= request.NumberOfEvacuee;
+        evacuationStatus.LastVehicleUsed = vehicle.Id;
+        _unitOfWork.EvacuationStatuses.Update(evacuationStatus);
+
+        // LOG
+
+
+
+        EvacuationZone evacuationZone = await _unitOfWork.EvacuationZones.FindOneAsync(p => p.Id == evacuationStatus.ZoneID);
+        if (evacuationZone == null)
+        {
+            // handle
+        }
+        double distance = DistanceCalculator.CalculateDistance(
+                request.Latitude, request.Longitude,
+                evacuationZone.Latitude, evacuationZone.Longitude);
+
+        Log log = new Log()
+        {
+            VehicleID = vehicle.Id,
+            ETA = distance * (double)60 / (double)vehicle.Speed,
+            IsEvacuationCompleted = evacuationStatus.RemainingPeople <= 0
+        };
+
+        await _unitOfWork.Logs.AddAsync(log);
+        await _unitOfWork.SaveChangesAsync();
+    }
+
+     public async Task DeleteAllDataAsync()
+    {
+        await _unitOfWork.Logs.DeleteAllAsync();
+        await _unitOfWork.EvacuationStatuses.DeleteAllAsync();
+        await _unitOfWork.EvacuationPlans.DeleteAllAsync();
+        await _unitOfWork.Vehicles.DeleteAllAsync();
+        await _unitOfWork.EvacuationZones.DeleteAllAsync();
+        await _unitOfWork.SaveChangesAsync();
     }
 }

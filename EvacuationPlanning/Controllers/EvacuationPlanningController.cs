@@ -39,20 +39,21 @@ public class EvacuationPlanningController : ControllerBase
     [HttpGet("evacuations/status")]
     public async Task<IActionResult> GetEvacuationStatusAsync()
     {
-        Console.WriteLine("Contoller");
         List<EvacuationStatus> responses = await _evacuationPlanningBusinessFlow.GetEvacuationStatusAsync();
         return Ok(responses);
     }
 
-    [HttpPut("evacuations/update")]
-    public IActionResult UpdateEvacuationStatus()
+    [HttpPut("evacuations/update/{id}")]
+    public async Task<IActionResult> UpdateEvacuationStatusAsync(int id, [FromBody] EvacuationStatusUpdateRequest request)
     {
+        await _evacuationPlanningBusinessFlow.UpdateEvacuationStatusAsync(id, request);
         return Ok();
     }
 
     [HttpDelete("evacuations/clear")]
-    public IActionResult DeleteEvacuations()
+    public async Task<IActionResult> DeleteEvacuationsAsync()
     {
+        await _evacuationPlanningBusinessFlow.DeleteAllDataAsync();
         return Ok();
     }
 }

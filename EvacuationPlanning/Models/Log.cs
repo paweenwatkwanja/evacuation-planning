@@ -8,12 +8,6 @@ public class Log
     [Column("id")]
     public long Id { get; set; }
 
-    [Column("evacuation_plan_id")]
-    public long EvacuationPlanID { get; set; }
-    
-    [ForeignKey("EvacuationPlanID")]
-    public EvacuationPlan EvacuationPlan { get; set; }
-
     [Column("vehicle_id")]
     public long VehicleID { get; set; }
 
