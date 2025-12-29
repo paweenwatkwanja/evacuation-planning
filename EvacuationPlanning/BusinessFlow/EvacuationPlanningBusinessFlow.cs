@@ -3,7 +3,6 @@ using Models;
 using Repository;
 using System.Linq.Expressions;
 using Helpers;
-using System.Security.Cryptography.X509Certificates;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.ComponentModel;
@@ -25,6 +24,18 @@ public class EvacuationPlanningBusinessFlow
     // EVACUTION ZONE
     public async Task<List<EvacuationZoneResponse>> ProcessEvacuationZonesAsync(List<EvacuationZoneRequest> requests)
     {
+        List<EvacuationZone> evacuationZones = convertRequestsToEvacuationZonesAndValidate(requests);
+
+        await _unitOfWork.EvacuationZones.AddRangeAsync(evacuationZones);
+        await _unitOfWork.SaveChangesAsync();
+
+        List<EvacuationZoneResponse> responses = convertEvacuationZonesToResponses(evacuationZones);
+
+        return responses;
+    }
+
+    private List<EvacuationZone> convertRequestsToEvacuationZonesAndValidate(List<EvacuationZoneRequest> requests)
+    {
         List<EvacuationZone> evacuationZones = new List<EvacuationZone>();
         foreach (EvacuationZoneRequest request in requests)
         {
@@ -39,10 +50,11 @@ public class EvacuationPlanningBusinessFlow
             };
             evacuationZones.Add(evacuationZone);
         }
+        return evacuationZones;
+    }
 
-        await _unitOfWork.EvacuationZones.AddRangeAsync(evacuationZones);
-        await _unitOfWork.SaveChangesAsync();
-
+    private List<EvacuationZoneResponse> convertEvacuationZonesToResponses(List<EvacuationZone> evacuationZones)
+    {
         List<EvacuationZoneResponse> responses = evacuationZones.Select(ez => new EvacuationZoneResponse
         {
             ZoneID = ez.ZoneID,
@@ -61,6 +73,18 @@ public class EvacuationPlanningBusinessFlow
     // VEHICLE
     public async Task<List<VehicleResponse>> ProcessVehiclesAsync(List<VehicleRequest> requests)
     {
+        List<Vehicle> vehicles = convertRequestsToVehiclesAndValidate(requests);
+
+        await _unitOfWork.Vehicles.AddRangeAsync(vehicles);
+        await _unitOfWork.SaveChangesAsync();
+
+        List<VehicleResponse> responses = convertVehiclesToResponses(vehicles);
+
+        return responses;
+    }
+
+    private List<Vehicle> convertRequestsToVehiclesAndValidate(List<VehicleRequest> requests)
+    {
         List<Vehicle> vehicles = new List<Vehicle>();
         foreach (VehicleRequest request in requests)
         {
@@ -76,10 +100,11 @@ public class EvacuationPlanningBusinessFlow
             };
             vehicles.Add(vehicle);
         }
+        return vehicles;
+    }
 
-        await _unitOfWork.Vehicles.AddRangeAsync(vehicles);
-        await _unitOfWork.SaveChangesAsync();
-
+    private List<VehicleResponse> convertVehiclesToResponses(List<Vehicle> vehicles)
+    {
         List<VehicleResponse> responses = vehicles.Select(v => new VehicleResponse
         {
             VehicleID = v.VehicleID,
@@ -112,12 +137,19 @@ public class EvacuationPlanningBusinessFlow
         }
 
         _unitOfWork.BeginTransaction();
+
         List<EvacuationPlan> evacuationPlans = prepareDataAndCreateEvacuationPlans(evacuationZones, vehicles);
         await addEvacuationPlanAsync(evacuationPlans);
+
+        List<long> vechicleIds = evacuationPlans.Select(ep => ep.Vehicle.Id).ToList();
+        await updateVehicleAvailabilitAsync(vechicleIds, false);
+
         List<EvacuationStatus> evacuationStatuses = convertEvacuationPlansToEvacuationStatuses(evacuationPlans);
         await addAndCacheEvacuationStatusesAsync(evacuationStatuses);
+
         List<Log> logs = convertEvacuationPlansToLogs(evacuationPlans);
         await addLogsAsync(logs);
+
         _unitOfWork.CommitTransaction();
 
         return evacuationPlans.ToList();
@@ -130,9 +162,7 @@ public class EvacuationPlanningBusinessFlow
 
     private async Task<List<Vehicle>> getAvailableVehiclesAsync()
     {
-        // filter unavailable vehicle
-        // get in use vehicles from cache then create a predicate vehicle NOT in cache
-        return await _unitOfWork.Vehicles.GetAllAsync();
+        return await _unitOfWork.Vehicles.FindAsync(p => p.IsAvailable);
     }
 
     private List<EvacuationPlan> prepareDataAndCreateEvacuationPlans(List<EvacuationZone> evacuationZones, List<Vehicle> vehicles)
@@ -174,7 +204,20 @@ public class EvacuationPlanningBusinessFlow
 
         await _redisService.SetCacheAsync("EvacuationStatuses", evacuationStatuses);
     }
-    
+
+    private async Task updateVehicleAvailabilitAsync(List<long> vehicleIds, bool isAvailable)
+    {
+        foreach (long vehicleId in vehicleIds)
+        {
+            Vehicle vehicle = await _unitOfWork.Vehicles.FindOneAsync(p => p.Id == vehicleId);
+            if (vehicle != null)
+            {
+                vehicle.IsAvailable = isAvailable;
+                _unitOfWork.Vehicles.Update(vehicle);
+            }
+        }
+    }
+
     private List<EvacuationStatus> convertEvacuationPlansToEvacuationStatuses(List<EvacuationPlan> evacuationPlans)
     {
         List<EvacuationStatus> evacuationStatuses = new List<EvacuationStatus>();
@@ -214,14 +257,15 @@ public class EvacuationPlanningBusinessFlow
         await _unitOfWork.SaveChangesAsync();
     }
 
+    // EVACUATION STATUS
     public async Task<List<EvacuationStatus>> GetEvacuationStatusAsync()
     {
-         List<EvacuationStatus> cachedEvacuationStatuses = await _redisService.GetCacheAsync<List<EvacuationStatus>>("EvacuationStatuses");
-         if (cachedEvacuationStatuses != null)
-         {
-             Console.WriteLine("Evacuation statuses retrieved from cache.");
-             return cachedEvacuationStatuses;
-         }
+        List<EvacuationStatus> cachedEvacuationStatuses = await _redisService.GetCacheAsync<List<EvacuationStatus>>("EvacuationStatuses");
+        if (cachedEvacuationStatuses != null)
+        {
+            Console.WriteLine("Evacuation statuses retrieved from cache.");
+            return cachedEvacuationStatuses;
+        }
 
         List<EvacuationStatus> evacuationStatuses = await _unitOfWork.EvacuationStatuses.GetAllAsync("EvacuationZone", "Vehicle");
         await _redisService.SetCacheAsync("EvacuationStatuses", evacuationStatuses);
@@ -229,9 +273,11 @@ public class EvacuationPlanningBusinessFlow
         return evacuationStatuses;
     }
 
+    // UPDATE EVACUATION STATUS
     public async Task UpdateEvacuationStatusAsync(int id, EvacuationStatusUpdateRequest request)
     {
-        // validate request
+        EvacuationStatusBusinessLogic.ValidateEvacuationStatusRequest(request);
+
         EvacuationStatus evacuationStatus = await _unitOfWork.EvacuationStatuses.FindOneAsync(p => p.Id == id);
         if (evacuationStatus == null)
         {
@@ -241,24 +287,41 @@ public class EvacuationPlanningBusinessFlow
         Vehicle vehicle = await _unitOfWork.Vehicles.FindOneAsync(p => p.VehicleID == request.VehicleID);
         if (vehicle == null)
         {
-            // locking mechanism here
             // handle
         }
 
-        // UPDATE
         evacuationStatus.TotalEvacuated += request.NumberOfEvacuee;
         evacuationStatus.RemainingPeople -= request.NumberOfEvacuee;
         evacuationStatus.LastVehicleUsed = vehicle.Id;
 
         _unitOfWork.BeginTransaction();
-        _unitOfWork.EvacuationStatuses.Update(evacuationStatus);
 
-        // add cache here
-        List<EvacuationStatus> allEvacuationStatuses = await _unitOfWork.EvacuationStatuses.GetAllAsync("EvacuationZone");
-        await _redisService.SetCacheAsync("EvacuationStatuses", allEvacuationStatuses);
+        _unitOfWork.EvacuationStatuses.Update(evacuationStatus);
+        // if not commit, will it apply to Redus cache?
+        await updateCachedEvacuationStatusesAsync();
+
+        bool isEvacuationCompleted = evacuationStatus.RemainingPeople <= 0;
+        if (isEvacuationCompleted)
+        {
+            vehicle.IsAvailable = true;
+            _unitOfWork.Vehicles.Update(vehicle);
+        }
 
         // LOG
-        EvacuationZone evacuationZone = await _unitOfWork.EvacuationZones.FindOneAsync(p => p.Id == evacuationStatus.ZoneID);
+        await prepareLogDatasAndAddLogAsync(evacuationStatus.ZoneID, request, vehicle, isEvacuationCompleted);
+        await _unitOfWork.SaveChangesAsync();
+        _unitOfWork.CommitTransaction();
+    }
+
+    private async Task updateCachedEvacuationStatusesAsync()
+    {
+        List<EvacuationStatus> evacuationStatuses = await _unitOfWork.EvacuationStatuses.GetAllAsync("EvacuationZone", "Vehicle");
+        await _redisService.SetCacheAsync("EvacuationStatuses", evacuationStatuses);
+    }
+
+    private async Task prepareLogDataAndAddLogAsync(long ZoneID, EvacuationStatusUpdateRequest request, Vehicle vehicle, bool isEvacuationCompleted)
+    {
+        EvacuationZone evacuationZone = await _unitOfWork.EvacuationZones.FindOneAsync(p => p.Id == ZoneID);
         if (evacuationZone == null)
         {
             // handle
@@ -267,19 +330,18 @@ public class EvacuationPlanningBusinessFlow
                 request.Latitude, request.Longitude,
                 evacuationZone.Latitude, evacuationZone.Longitude);
 
-        Log log = new Log()
+        List<Log> logs = new List<Log>() {  new Log()
         {
             VehicleID = vehicle.Id,
             ETA = distance * (double)60 / (double)vehicle.Speed,
-            IsEvacuationCompleted = evacuationStatus.RemainingPeople <= 0
-        };
+            IsEvacuationCompleted = isEvacuationCompleted
+        }};
 
-        await _unitOfWork.Logs.AddAsync(log);
-        await _unitOfWork.SaveChangesAsync();
-        _unitOfWork.CommitTransaction();
+        await addLogsAsync(logs);
     }
 
-     public async Task DeleteAllDataAsync()
+    // DELETE ALL DATA
+    public async Task DeleteAllDataAsync()
     {
         await _unitOfWork.Logs.DeleteAllAsync();
         await _unitOfWork.EvacuationStatuses.DeleteAllAsync();

@@ -17,7 +17,7 @@ builder.Services.AddDbContext<EvacuationPlanningDbContext>(options =>
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = builder.Configuration.GetConnectionString("RedisConnection");
-    options.InstanceName = "EvacuationPlanningInstance";
+    options.InstanceName = "EvacuationPlanningInstance_";
 });
 
 builder.Services.AddScoped<EvacuationPlanningBusinessFlow>();

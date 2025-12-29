@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Models;
@@ -27,5 +28,12 @@ public class Vehicle
     public int Speed { get; set; }
 
     [NotMapped]
-    public double Distance  { get; set; }
+    public double Distance { get; set; }
+
+    [Column("is_available")]
+    public bool IsAvailable { get; set; }
+
+    [Timestamp]
+    [Column("xmin", TypeName = "xid")]
+    public uint RowVersion { get; set; }
 }

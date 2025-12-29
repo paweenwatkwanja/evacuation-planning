@@ -6,7 +6,6 @@ public static class EvacuationZoneBusinessLogic
 {
     public static void ValidateEvacuationZoneRequest(EvacuationZoneRequest request)
     {
-        Console.WriteLine("BusinessLogic");
         if (request == null)
         {
             throw new ArgumentException("Request cannot be null or empty");
