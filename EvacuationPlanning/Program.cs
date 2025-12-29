@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using BusinessFlow;
 using Repository;
 using Database;
+using Services;
 
 [assembly: ApiController]
 
@@ -13,7 +14,15 @@ var _connectionString = builder.Configuration.GetConnectionString("PostgresqlCon
 builder.Services.AddDbContext<EvacuationPlanningDbContext>(options =>
     options.UseNpgsql(_connectionString));
 
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("RedisConnection");
+    options.InstanceName = "EvacuationPlanningInstance";
+});
+
 builder.Services.AddScoped<EvacuationPlanningBusinessFlow>();
+
+builder.Services.AddScoped<RedisService>();
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 

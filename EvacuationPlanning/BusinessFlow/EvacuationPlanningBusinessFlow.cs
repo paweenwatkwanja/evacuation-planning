@@ -7,15 +7,19 @@ using System.Security.Cryptography.X509Certificates;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.ComponentModel;
+using Services;
 
 namespace BusinessFlow;
 
 public class EvacuationPlanningBusinessFlow
 {
     private readonly IUnitOfWork _unitOfWork;
-    public EvacuationPlanningBusinessFlow(IUnitOfWork unitOfWork)
+    private readonly RedisService _redisService;
+
+    public EvacuationPlanningBusinessFlow(IUnitOfWork unitOfWork, RedisService redisService)
     {
         _unitOfWork = unitOfWork;
+        _redisService = redisService;
     }
 
     // EVACUTION ZONE
@@ -107,12 +111,14 @@ public class EvacuationPlanningBusinessFlow
             // hadle here
         }
 
+        _unitOfWork.BeginTransaction();
         List<EvacuationPlan> evacuationPlans = prepareDataAndCreateEvacuationPlans(evacuationZones, vehicles);
         await addEvacuationPlanAsync(evacuationPlans);
         List<EvacuationStatus> evacuationStatuses = convertEvacuationPlansToEvacuationStatuses(evacuationPlans);
-        await addEvacuationStatusesAsync(evacuationStatuses);
+        await addAndCacheEvacuationStatusesAsync(evacuationStatuses);
         List<Log> logs = convertEvacuationPlansToLogs(evacuationPlans);
         await addLogsAsync(logs);
+        _unitOfWork.CommitTransaction();
 
         return evacuationPlans.ToList();
     }
@@ -161,12 +167,14 @@ public class EvacuationPlanningBusinessFlow
         await _unitOfWork.SaveChangesAsync();
     }
 
-    private async Task addEvacuationStatusesAsync(List<EvacuationStatus> evacuationStatuses)
+    private async Task addAndCacheEvacuationStatusesAsync(List<EvacuationStatus> evacuationStatuses)
     {
         await _unitOfWork.EvacuationStatuses.AddRangeAsync(evacuationStatuses);
         await _unitOfWork.SaveChangesAsync();
-    }
 
+        await _redisService.SetCacheAsync("EvacuationStatuses", evacuationStatuses);
+    }
+    
     private List<EvacuationStatus> convertEvacuationPlansToEvacuationStatuses(List<EvacuationPlan> evacuationPlans)
     {
         List<EvacuationStatus> evacuationStatuses = new List<EvacuationStatus>();
@@ -208,7 +216,16 @@ public class EvacuationPlanningBusinessFlow
 
     public async Task<List<EvacuationStatus>> GetEvacuationStatusAsync()
     {
+         List<EvacuationStatus> cachedEvacuationStatuses = await _redisService.GetCacheAsync<List<EvacuationStatus>>("EvacuationStatuses");
+         if (cachedEvacuationStatuses != null)
+         {
+             Console.WriteLine("Evacuation statuses retrieved from cache.");
+             return cachedEvacuationStatuses;
+         }
+
         List<EvacuationStatus> evacuationStatuses = await _unitOfWork.EvacuationStatuses.GetAllAsync("EvacuationZone", "Vehicle");
+        await _redisService.SetCacheAsync("EvacuationStatuses", evacuationStatuses);
+        Console.WriteLine("Evacuation statuses retrieved from database and cached.");
         return evacuationStatuses;
     }
 
@@ -224,6 +241,7 @@ public class EvacuationPlanningBusinessFlow
         Vehicle vehicle = await _unitOfWork.Vehicles.FindOneAsync(p => p.VehicleID == request.VehicleID);
         if (vehicle == null)
         {
+            // locking mechanism here
             // handle
         }
 
@@ -231,12 +249,15 @@ public class EvacuationPlanningBusinessFlow
         evacuationStatus.TotalEvacuated += request.NumberOfEvacuee;
         evacuationStatus.RemainingPeople -= request.NumberOfEvacuee;
         evacuationStatus.LastVehicleUsed = vehicle.Id;
+
+        _unitOfWork.BeginTransaction();
         _unitOfWork.EvacuationStatuses.Update(evacuationStatus);
 
+        // add cache here
+        List<EvacuationStatus> allEvacuationStatuses = await _unitOfWork.EvacuationStatuses.GetAllAsync("EvacuationZone");
+        await _redisService.SetCacheAsync("EvacuationStatuses", allEvacuationStatuses);
+
         // LOG
-
-
-
         EvacuationZone evacuationZone = await _unitOfWork.EvacuationZones.FindOneAsync(p => p.Id == evacuationStatus.ZoneID);
         if (evacuationZone == null)
         {
@@ -255,6 +276,7 @@ public class EvacuationPlanningBusinessFlow
 
         await _unitOfWork.Logs.AddAsync(log);
         await _unitOfWork.SaveChangesAsync();
+        _unitOfWork.CommitTransaction();
     }
 
      public async Task DeleteAllDataAsync()
