@@ -61,4 +61,15 @@ public class RedisService
         }
         return data;
     }
+
+    public async Task DeleteCacheAsync(string key)
+    {
+        if (!IsAvailable)
+        {
+            _logger.LogWarning("Redis is not available.");
+            return;
+        }
+        _logger.LogInformation($"Deleting cache for key: {key}");
+        await _db.KeyDeleteAsync(key);
+    }
 }

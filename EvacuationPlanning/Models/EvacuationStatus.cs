@@ -27,4 +27,7 @@ public class EvacuationStatus
 
     [ForeignKey("ZoneID")]
     public EvacuationZone EvacuationZone { get; set; }
+
+    [Column("is_evacuation_completed")]
+    public bool IsEvacuationCompleted { get; set; }
 }

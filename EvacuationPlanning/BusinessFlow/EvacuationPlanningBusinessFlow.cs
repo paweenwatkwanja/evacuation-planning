@@ -208,7 +208,7 @@ public class EvacuationPlanningBusinessFlow
             };
             evacuationPlans.Add(evacuationPlan);
 
-            vehicles.RemoveAll(v => v.VehicleID == vehicle.VehicleID);
+            sortedVehicles.RemoveAll(v => v.VehicleID == vehicle.VehicleID);
         }
         return evacuationPlans;
     }
@@ -316,6 +316,10 @@ public class EvacuationPlanningBusinessFlow
         if (evacuationStatus == null)
         {
             throw new NotFoundException($"EvacuationStatus with ID {id} not found.");
+        } else if (evacuationStatus.IsEvacuationCompleted)
+        {
+            _logger.LogInformation($"EvacuationStatus with ID {id} is already completed. No further updates allowed.");
+            return;
         }
 
         Vehicle vehicle = await getVehicleByVehicleIDAsync(request.VehicleID);
@@ -326,10 +330,9 @@ public class EvacuationPlanningBusinessFlow
 
         updateEvacuationStatus(request, evacuationStatus, vehicle);
 
-        bool isEvacuationCompleted = evacuationStatus.RemainingPeople <= 0;
-        updateVehicleAfterEvacuationStatusUpdate(vehicle, request, isEvacuationCompleted);
+        updateVehicleAfterEvacuationStatusUpdate(vehicle, request, evacuationStatus.IsEvacuationCompleted);
 
-        await prepareLogDataAndAddLogAsync(evacuationStatus.ZoneID, request, vehicle, isEvacuationCompleted);
+        await prepareLogDataAndAddLogAsync(evacuationStatus.ZoneID, request, vehicle, evacuationStatus.IsEvacuationCompleted);
         await _unitOfWork.SaveChangesAsync();
 
         await updateCachedEvacuationStatusesAsync(evacuationStatus);
@@ -350,6 +353,7 @@ public class EvacuationPlanningBusinessFlow
         evacuationStatus.TotalEvacuated += request.NumberOfEvacuee;
         evacuationStatus.RemainingPeople -= request.NumberOfEvacuee;
         evacuationStatus.LastVehicleUsed = vehicle.Id;
+        evacuationStatus.IsEvacuationCompleted = evacuationStatus.RemainingPeople <= 0;
 
         _unitOfWork.EvacuationStatuses.Update(evacuationStatus);
     }
@@ -408,5 +412,6 @@ public class EvacuationPlanningBusinessFlow
         await _unitOfWork.Vehicles.DeleteAllAsync();
         await _unitOfWork.EvacuationZones.DeleteAllAsync();
         await _unitOfWork.SaveChangesAsync();
+        await _redisService.DeleteCacheAsync("EvacuationStatuses");
     }
 }
