@@ -29,6 +29,11 @@ public static class EvacuationPlanBusinessLogic
             vehicle.Distance = DistanceCalculator.CalculateDistance(
                 vehicle.Latitude, vehicle.Longitude,
                 evacuationZone.Latitude, evacuationZone.Longitude);
+    
+            if (vehicle.Distance > 25)
+            {               
+                continue;
+            }
         }
 
         return vehicles.OrderBy(o => o.Distance).FirstOrDefault() ?? new Vehicle();

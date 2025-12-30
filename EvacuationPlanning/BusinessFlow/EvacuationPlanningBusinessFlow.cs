@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.ComponentModel;
 using Services;
+using Exceptions;
 
 namespace BusinessFlow;
 
@@ -14,11 +15,13 @@ public class EvacuationPlanningBusinessFlow
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly RedisService _redisService;
+    private readonly ILogger<GlobalExceptionHandler> _logger;
 
-    public EvacuationPlanningBusinessFlow(IUnitOfWork unitOfWork, RedisService redisService)
+    public EvacuationPlanningBusinessFlow(IUnitOfWork unitOfWork, RedisService redisService, ILogger<GlobalExceptionHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _redisService = redisService;
+        _logger = logger;
     }
 
     // EVACUTION ZONE
@@ -124,21 +127,24 @@ public class EvacuationPlanningBusinessFlow
     //EVACUATION PLAN
     public async Task<List<EvacuationPlan>> ProcessEvacuationPlanAsync()
     {
+        List<EvacuationPlan> evacuationPlans = new List<EvacuationPlan>();
         List<EvacuationZone> evacuationZones = await getEvacuationZonesAsync();
         if (evacuationZones.Count <= 0)
         {
-            // hadle here
+            _logger.LogInformation("No evacuation zones available to process evacuation plans.");
+            return evacuationPlans;
         }
 
         List<Vehicle> vehicles = await getAvailableVehiclesAsync();
         if (vehicles.Count <= 0)
         {
-            // hadle here
+            _logger.LogInformation("No vehicles available to process evacuation plans.");
+            return evacuationPlans;
         }
 
         _unitOfWork.BeginTransaction();
 
-        List<EvacuationPlan> evacuationPlans = prepareDataAndCreateEvacuationPlans(evacuationZones, vehicles);
+        evacuationPlans = prepareDataAndCreateEvacuationPlans(evacuationZones, vehicles);
         await addEvacuationPlanAsync(evacuationPlans);
 
         List<long> vechicleIds = evacuationPlans.Select(ep => ep.Vehicle.Id).ToList();
@@ -174,6 +180,11 @@ public class EvacuationPlanningBusinessFlow
         foreach (EvacuationZone evacuationZone in sortedEvacuationZones)
         {
             Vehicle vehicle = EvacuationPlanBusinessLogic.FindAppropriateVehicle(evacuationZone, sortedVehicles);
+            if (vehicle == null)
+            {
+                _logger.LogInformation("No available vehicles within a reasonable distance for Evacuation Zone ID: " + evacuationZone.Id);
+                continue;
+            }
 
             int remainingPeople = evacuationZone.NumberOfPeople - vehicle.Capacity;
             EvacuationPlan evacuationPlan = new EvacuationPlan()
@@ -263,13 +274,13 @@ public class EvacuationPlanningBusinessFlow
         List<EvacuationStatus> cachedEvacuationStatuses = await _redisService.GetCacheAsync<List<EvacuationStatus>>("EvacuationStatuses");
         if (cachedEvacuationStatuses != null)
         {
-            Console.WriteLine("Evacuation statuses retrieved from cache.");
+            _logger.LogInformation("Evacuation statuses retrieved from cache.");
             return cachedEvacuationStatuses;
         }
 
         List<EvacuationStatus> evacuationStatuses = await _unitOfWork.EvacuationStatuses.GetAllAsync("EvacuationZone", "Vehicle");
         await _redisService.SetCacheAsync("EvacuationStatuses", evacuationStatuses);
-        Console.WriteLine("Evacuation statuses retrieved from database and cached.");
+        _logger.LogInformation("Evacuation statuses retrieved from database and cached.");
         return evacuationStatuses;
     }
 
@@ -281,13 +292,13 @@ public class EvacuationPlanningBusinessFlow
         EvacuationStatus evacuationStatus = await _unitOfWork.EvacuationStatuses.FindOneAsync(p => p.Id == id);
         if (evacuationStatus == null)
         {
-            // handle
+            throw new NotFoundException($"EvacuationStatus with ID {id} not found.");
         }
 
         Vehicle vehicle = await _unitOfWork.Vehicles.FindOneAsync(p => p.VehicleID == request.VehicleID);
         if (vehicle == null)
         {
-            // handle
+            throw new NotFoundException($"Vehicle with ID {request.VehicleID} not found.");
         }
 
         evacuationStatus.TotalEvacuated += request.NumberOfEvacuee;
@@ -308,7 +319,7 @@ public class EvacuationPlanningBusinessFlow
         }
 
         // LOG
-        await prepareLogDatasAndAddLogAsync(evacuationStatus.ZoneID, request, vehicle, isEvacuationCompleted);
+        await prepareLogDataAndAddLogAsync(evacuationStatus.ZoneID, request, vehicle, isEvacuationCompleted);
         await _unitOfWork.SaveChangesAsync();
         _unitOfWork.CommitTransaction();
     }
@@ -324,7 +335,7 @@ public class EvacuationPlanningBusinessFlow
         EvacuationZone evacuationZone = await _unitOfWork.EvacuationZones.FindOneAsync(p => p.Id == ZoneID);
         if (evacuationZone == null)
         {
-            // handle
+            throw new NotFoundException($"EvacuationZone with ID {ZoneID} not found.");
         }
         double distance = DistanceCalculator.CalculateDistance(
                 request.Latitude, request.Longitude,

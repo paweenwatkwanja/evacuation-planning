@@ -5,6 +5,7 @@ using BusinessFlow;
 using Repository;
 using Database;
 using Services;
+using Exceptions;
 
 [assembly: ApiController]
 
@@ -36,9 +37,11 @@ var canConnect = await dbContext.Database.CanConnectAsync();
 dbContext.Database.Migrate();
 Console.WriteLine($"Database connection successful: {canConnect}");
 
+app.UseMiddleware<GlobalExceptionHandler>();
 app.UseRouting();
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllers();
 });
+
 app.Run();

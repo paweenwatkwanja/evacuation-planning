@@ -19,14 +19,14 @@ public class EvacuationPlanningController : ControllerBase
     public async Task<IActionResult> PostEvacuationZonesAsync([FromBody] List<EvacuationZoneRequest> requests)
     {
         List<EvacuationZoneResponse> responses = await _evacuationPlanningBusinessFlow.ProcessEvacuationZonesAsync(requests);
-        return Ok(responses);
+        return Created(responses);
     }
 
     [HttpPost("vehicles")]
     public async Task<IActionResult> PostVehiclesAsync([FromBody] List<VehicleRequest> requests)
     {
         List<VehicleResponse> responses = await _evacuationPlanningBusinessFlow.ProcessVehiclesAsync(requests);
-        return Ok(responses);
+        return Created(responses);
     }
 
     [HttpPost("evacuations/plan")]
