@@ -41,14 +41,14 @@ public class EvacuationPlanningController : ControllerBase
     [HttpGet("evacuations/status")]
     public async Task<IActionResult> GetEvacuationStatusAsync()
     {
-        List<EvacuationStatus> responses = await _evacuationPlanningBusinessFlow.GetEvacuationStatusAsync();
+        List<EvacuationStatus> responses = await _evacuationPlanningBusinessFlow.GetEvacuationStatusesAsync();
         return Ok(responses);
     }
 
     [HttpPut("evacuations/update/{id}")]
     public async Task<IActionResult> UpdateEvacuationStatusAsync(int id, [FromBody] EvacuationStatusUpdateRequest request)
     {
-        await _evacuationPlanningBusinessFlow.UpdateEvacuationStatusAsync(id, request);
+        await _evacuationPlanningBusinessFlow.UpdateEvacuationStatusAndRelatedDataAsync(id, request);
         return Ok();
     }
 

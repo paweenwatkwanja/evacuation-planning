@@ -11,6 +11,4 @@ public interface IUnitOfWork : IDisposable
     IRepository<Log> Logs { get; }
 
     Task<int> SaveChangesAsync();
-    void BeginTransaction();
-    void CommitTransaction();
 }

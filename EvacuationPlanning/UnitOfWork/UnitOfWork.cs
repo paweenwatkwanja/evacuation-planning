@@ -33,14 +33,4 @@ public class UnitOfWork : IUnitOfWork
     {
         _dbContext.Dispose();
     }
-
-    public void BeginTransaction()
-    {
-        _dbContext.Database.BeginTransaction();
-    }
-
-    public void CommitTransaction()
-    {
-        _dbContext.Database.CommitTransaction();
-    }
 }
