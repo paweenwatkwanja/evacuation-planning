@@ -8,6 +8,8 @@ using System.Runtime.CompilerServices;
 using System.ComponentModel;
 using Services;
 using Exceptions;
+using StackExchange.Redis;
+using System.Text.Json;
 
 namespace BusinessFlow;
 
@@ -15,9 +17,9 @@ public class EvacuationPlanningBusinessFlow
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly RedisService _redisService;
-    private readonly ILogger<GlobalExceptionHandler> _logger;
+    private readonly ILogger<EvacuationPlanningBusinessFlow> _logger;
 
-    public EvacuationPlanningBusinessFlow(IUnitOfWork unitOfWork, RedisService redisService, ILogger<GlobalExceptionHandler> logger)
+    public EvacuationPlanningBusinessFlow(IUnitOfWork unitOfWork, RedisService redisService, ILogger<EvacuationPlanningBusinessFlow> logger)
     {
         _unitOfWork = unitOfWork;
         _redisService = redisService;
@@ -99,7 +101,8 @@ public class EvacuationPlanningBusinessFlow
                 Type = request.Type,
                 Latitude = request.LocationCoordinates.Latitude,
                 Longitude = request.LocationCoordinates.Longitude,
-                Speed = request.Speed
+                Speed = request.Speed,
+                IsAvailable = true
             };
             vehicles.Add(vehicle);
         }
@@ -213,7 +216,12 @@ public class EvacuationPlanningBusinessFlow
         await _unitOfWork.EvacuationStatuses.AddRangeAsync(evacuationStatuses);
         await _unitOfWork.SaveChangesAsync();
 
-        await _redisService.SetCacheAsync("EvacuationStatuses", evacuationStatuses);
+        HashEntry[] evacuationStatusHashSet = evacuationStatuses.Select(status =>
+           new HashEntry(
+               status.EvacuationZone.ZoneID,
+               JsonSerializer.Serialize(status)))
+               .ToArray();
+        await _redisService.SetHastSetCacheAsync("EvacuationStatuses", evacuationStatusHashSet);
     }
 
     private async Task updateVehicleAvailabilitAsync(List<long> vehicleIds, bool isAvailable)
@@ -271,7 +279,7 @@ public class EvacuationPlanningBusinessFlow
     // EVACUATION STATUS
     public async Task<List<EvacuationStatus>> GetEvacuationStatusAsync()
     {
-        List<EvacuationStatus> cachedEvacuationStatuses = await _redisService.GetCacheAsync<List<EvacuationStatus>>("EvacuationStatuses");
+        List<EvacuationStatus> cachedEvacuationStatuses = await _redisService.GetHashSetCacheAsync<EvacuationStatus>("EvacuationStatuses");
         if (cachedEvacuationStatuses != null)
         {
             _logger.LogInformation("Evacuation statuses retrieved from cache.");
@@ -279,7 +287,13 @@ public class EvacuationPlanningBusinessFlow
         }
 
         List<EvacuationStatus> evacuationStatuses = await _unitOfWork.EvacuationStatuses.GetAllAsync("EvacuationZone", "Vehicle");
-        await _redisService.SetCacheAsync("EvacuationStatuses", evacuationStatuses);
+
+        HashEntry[] evacuationStatusHashSet = evacuationStatuses.Select(status =>
+            new HashEntry(
+                status.EvacuationZone.ZoneID,
+                JsonSerializer.Serialize(status)))
+                .ToArray();
+        await _redisService.SetHastSetCacheAsync("EvacuationStatuses", evacuationStatusHashSet);
         _logger.LogInformation("Evacuation statuses retrieved from database and cached.");
         return evacuationStatuses;
     }
@@ -289,7 +303,7 @@ public class EvacuationPlanningBusinessFlow
     {
         EvacuationStatusBusinessLogic.ValidateEvacuationStatusRequest(request);
 
-        EvacuationStatus evacuationStatus = await _unitOfWork.EvacuationStatuses.FindOneAsync(p => p.Id == id);
+        EvacuationStatus evacuationStatus = await _unitOfWork.EvacuationStatuses.FindOneAsync(p => p.Id == id, null, "EvacuationZone");
         if (evacuationStatus == null)
         {
             throw new NotFoundException($"EvacuationStatus with ID {id} not found.");
@@ -309,7 +323,7 @@ public class EvacuationPlanningBusinessFlow
 
         _unitOfWork.EvacuationStatuses.Update(evacuationStatus);
         // if not commit, will it apply to Redus cache?
-        await updateCachedEvacuationStatusesAsync();
+        await updateCachedEvacuationStatusesAsync(evacuationStatus);
 
         bool isEvacuationCompleted = evacuationStatus.RemainingPeople <= 0;
         if (isEvacuationCompleted)
@@ -324,10 +338,15 @@ public class EvacuationPlanningBusinessFlow
         _unitOfWork.CommitTransaction();
     }
 
-    private async Task updateCachedEvacuationStatusesAsync()
+    private async Task updateCachedEvacuationStatusesAsync(EvacuationStatus evacuationStatus)
     {
-        List<EvacuationStatus> evacuationStatuses = await _unitOfWork.EvacuationStatuses.GetAllAsync("EvacuationZone", "Vehicle");
-        await _redisService.SetCacheAsync("EvacuationStatuses", evacuationStatuses);
+        HashEntry[] evacuationStatusHashSet = new HashEntry[]
+        {
+            new HashEntry(
+                evacuationStatus.EvacuationZone.ZoneID,
+                JsonSerializer.Serialize(evacuationStatus))
+        };
+        await _redisService.UpdateHashSetCacheAsync("EvacuationStatuses", evacuationStatusHashSet);
     }
 
     private async Task prepareLogDataAndAddLogAsync(long ZoneID, EvacuationStatusUpdateRequest request, Vehicle vehicle, bool isEvacuationCompleted)

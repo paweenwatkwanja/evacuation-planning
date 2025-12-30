@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using Models;
 using BusinessFlow;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 [Route("/api/")]
 [ApiController]
@@ -19,14 +21,14 @@ public class EvacuationPlanningController : ControllerBase
     public async Task<IActionResult> PostEvacuationZonesAsync([FromBody] List<EvacuationZoneRequest> requests)
     {
         List<EvacuationZoneResponse> responses = await _evacuationPlanningBusinessFlow.ProcessEvacuationZonesAsync(requests);
-        return Created(responses);
+        return Created("evacuation-zones", responses);
     }
 
     [HttpPost("vehicles")]
     public async Task<IActionResult> PostVehiclesAsync([FromBody] List<VehicleRequest> requests)
     {
         List<VehicleResponse> responses = await _evacuationPlanningBusinessFlow.ProcessVehiclesAsync(requests);
-        return Created(responses);
+        return Created("vehicles", responses);
     }
 
     [HttpPost("evacuations/plan")]

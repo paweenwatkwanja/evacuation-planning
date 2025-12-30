@@ -6,6 +6,7 @@ using Repository;
 using Database;
 using Services;
 using Exceptions;
+using StackExchange.Redis;
 
 [assembly: ApiController]
 
@@ -15,15 +16,20 @@ var _connectionString = builder.Configuration.GetConnectionString("PostgresqlCon
 builder.Services.AddDbContext<EvacuationPlanningDbContext>(options =>
     options.UseNpgsql(_connectionString));
 
-builder.Services.AddStackExchangeRedisCache(options =>
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
-    options.Configuration = builder.Configuration.GetConnectionString("RedisConnection");
-    options.InstanceName = "EvacuationPlanningInstance_";
+    var configuration = ConfigurationOptions.Parse(
+        builder.Configuration.GetConnectionString("RedisConnection"),
+        true);
+
+    configuration.AbortOnConnectFail = false;
+
+    return ConnectionMultiplexer.Connect(configuration);
 });
 
 builder.Services.AddScoped<EvacuationPlanningBusinessFlow>();
 
-builder.Services.AddScoped<RedisService>();
+builder.Services.AddSingleton<RedisService>();
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 

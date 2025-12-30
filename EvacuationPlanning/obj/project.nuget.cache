@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "Vxu2PMVXCAI=",
+  "dgSpecHash": "tPQFxANOBFs=",
   "success": true,
   "projectFilePath": "/Users/paquesqueue/Desktop/evacuation-planning/EvacuationPlanning/EvacuationPlanning.csproj",
   "expectedPackageFiles": [
@@ -34,6 +34,7 @@
     "/Users/paquesqueue/.nuget/packages/microsoft.entityframeworkcore.relational/10.0.1/microsoft.entityframeworkcore.relational.10.0.1.nupkg.sha512",
     "/Users/paquesqueue/.nuget/packages/microsoft.extensions.caching.stackexchangeredis/10.0.1/microsoft.extensions.caching.stackexchangeredis.10.0.1.nupkg.sha512",
     "/Users/paquesqueue/.nuget/packages/microsoft.extensions.dependencymodel/10.0.1/microsoft.extensions.dependencymodel.10.0.1.nupkg.sha512",
+    "/Users/paquesqueue/.nuget/packages/microsoft.extensions.logging.abstractions/10.0.1/microsoft.extensions.logging.abstractions.10.0.1.nupkg.sha512",
     "/Users/paquesqueue/.nuget/packages/microsoft.identity.client/4.73.1/microsoft.identity.client.4.73.1.nupkg.sha512",
     "/Users/paquesqueue/.nuget/packages/microsoft.identity.client.extensions.msal/4.73.1/microsoft.identity.client.extensions.msal.4.73.1.nupkg.sha512",
     "/Users/paquesqueue/.nuget/packages/microsoft.identitymodel.abstractions/7.7.1/microsoft.identitymodel.abstractions.7.7.1.nupkg.sha512",
@@ -79,6 +80,18 @@
       "warningLevel": 1,
       "filePath": "/Users/paquesqueue/Desktop/evacuation-planning/EvacuationPlanning/EvacuationPlanning.csproj",
       "libraryId": "Microsoft.AspNetCore.Mvc",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    },
+    {
+      "code": "NU1510",
+      "level": "Warning",
+      "message": "PackageReference Microsoft.Extensions.Logging.Abstractions will not be pruned. Consider removing this package from your dependencies, as it is likely unnecessary.",
+      "projectPath": "/Users/paquesqueue/Desktop/evacuation-planning/EvacuationPlanning/EvacuationPlanning.csproj",
+      "warningLevel": 1,
+      "filePath": "/Users/paquesqueue/Desktop/evacuation-planning/EvacuationPlanning/EvacuationPlanning.csproj",
+      "libraryId": "Microsoft.Extensions.Logging.Abstractions",
       "targetGraphs": [
         "net10.0"
       ]

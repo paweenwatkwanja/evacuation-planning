@@ -19,31 +19,46 @@ public class Repository<T> : IRepository<T> where T : class
     {
         IQueryable<T> query = _dbSet;
 
-        foreach (var include in includes)
+        if (includes != null && includes.Length > 0)
         {
-            query = query.Include(include);
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
         }
 
         return await query.ToListAsync();
     }
 
     public async Task<List<T>> FindAsync(
-         Expression<Func<T, bool>> predicate,
-         Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null)
+        Expression<Func<T, bool>> predicate,
+        Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
+        params string[] includes
+        )
     {
         var query = _dbSet.Where(predicate);
 
         if (orderBy != null)
         {
             query = orderBy(query);
+        }
+
+        if (includes != null && includes.Length > 0)
+        {
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
         }
 
         return await query.ToListAsync();
     }
 
     public async Task<T?> FindOneAsync(
-    Expression<Func<T, bool>> predicate,
-    Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null)
+        Expression<Func<T, bool>> predicate,
+        Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
+        params string[] includes
+   )
     {
         var query = _dbSet.Where(predicate);
 
@@ -51,6 +66,15 @@ public class Repository<T> : IRepository<T> where T : class
         {
             query = orderBy(query);
         }
+
+        if (includes != null && includes.Length > 0)
+        {
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
+        }
+
 
         return await query.FirstOrDefaultAsync();
     }
