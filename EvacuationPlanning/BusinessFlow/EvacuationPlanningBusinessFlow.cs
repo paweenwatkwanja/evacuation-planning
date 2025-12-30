@@ -29,6 +29,11 @@ public class EvacuationPlanningBusinessFlow
     // EVACUTION ZONE
     public async Task<List<EvacuationZoneResponse>> ProcessEvacuationZonesAsync(List<EvacuationZoneRequest> requests)
     {
+        if (requests == null || requests.Count == 0)
+        {
+            throw new ValidationException("Evacuation zone requests cannot be null or empty.");
+        }
+
         List<EvacuationZone> evacuationZones = convertRequestsToEvacuationZonesAndValidate(requests);
 
         await _unitOfWork.EvacuationZones.AddRangeAsync(evacuationZones);
@@ -60,16 +65,17 @@ public class EvacuationPlanningBusinessFlow
 
     private List<EvacuationZoneResponse> convertEvacuationZonesToResponses(List<EvacuationZone> evacuationZones)
     {
-        List<EvacuationZoneResponse> responses = evacuationZones.Select(ez => new EvacuationZoneResponse
+        List<EvacuationZoneResponse> responses = evacuationZones.Select(zone => new EvacuationZoneResponse
         {
-            ZoneID = ez.ZoneID,
+            Id = zone.Id,
+            ZoneID = zone.ZoneID,
             LocationCoordinates = new LocationCoordinate()
             {
-                Latitude = ez.Latitude,
-                Longitude = ez.Longitude,
+                Latitude = zone.Latitude,
+                Longitude = zone .Longitude,
             },
-            NumberOfPeople = ez.NumberOfPeople,
-            UrgencyLevel = ez.UrgencyLevel
+            NumberOfPeople = zone.NumberOfPeople,
+            UrgencyLevel = zone.UrgencyLevel
         }).ToList();
 
         return responses;
@@ -78,6 +84,10 @@ public class EvacuationPlanningBusinessFlow
     // VEHICLE
     public async Task<List<VehicleResponse>> ProcessVehiclesAsync(List<VehicleRequest> requests)
     {
+        if (requests == null || requests.Count == 0)
+        {
+            throw new ValidationException("Vehicle requests cannot be null or empty.");
+        }
         List<Vehicle> vehicles = convertRequestsToVehiclesAndValidate(requests);
 
         await _unitOfWork.Vehicles.AddRangeAsync(vehicles);
@@ -111,17 +121,18 @@ public class EvacuationPlanningBusinessFlow
 
     private List<VehicleResponse> convertVehiclesToResponses(List<Vehicle> vehicles)
     {
-        List<VehicleResponse> responses = vehicles.Select(v => new VehicleResponse
+        List<VehicleResponse> responses = vehicles.Select(vehicle => new VehicleResponse
         {
-            VehicleID = v.VehicleID,
-            Capacity = v.Capacity,
-            Type = v.Type,
+            Id = vehicle.Id,
+            VehicleID = vehicle.VehicleID,
+            Capacity = vehicle.Capacity,
+            Type = vehicle.Type,
             LocationCoordinates = new LocationCoordinate()
             {
-                Latitude = v.Latitude,
-                Longitude = v.Longitude,
+                Latitude = vehicle.Latitude,
+                Longitude = vehicle.Longitude,
             },
-            Speed = v.Speed
+            Speed = vehicle.Speed
         }).ToList();
 
         return responses;

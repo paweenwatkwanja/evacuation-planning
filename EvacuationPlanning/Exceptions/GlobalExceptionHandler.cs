@@ -27,7 +27,8 @@ public class GlobalExceptionHandler(
 
                 await context.Response.WriteAsJsonAsync(new
                 {
-                    ErrorMessage = ex.Message
+                    ErrorMessage = ex.Message,
+                    ErrorDetail = ex.InnerException?.Message
                 });
             }
         }

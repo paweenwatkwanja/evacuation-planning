@@ -18,12 +18,12 @@ public static class EvacuationPlanBusinessLogic
         vehicles = vehicles.Where(w => w.Capacity == vehicle.Capacity).ToList();
         if (vehicles.Count > 0)
         {
-            vehicle = findClosestVehicle(evacuationZone, vehicles);
+            vehicle = FindClosestVehicle(evacuationZone, vehicles);
         }
         return vehicle;
     }
 
-    private static Vehicle findClosestVehicle(EvacuationZone evacuationZone, List<Vehicle> vehicles)
+    public static Vehicle FindClosestVehicle(EvacuationZone evacuationZone, List<Vehicle> vehicles)
     {
         foreach (Vehicle vehicle in vehicles)
         {

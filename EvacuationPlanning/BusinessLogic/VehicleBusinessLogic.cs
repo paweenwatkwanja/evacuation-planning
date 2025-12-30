@@ -7,23 +7,22 @@ public static class VehicleBusinessLogic
 {
     public static void ValidateVehicleRequest(VehicleRequest request)
     {
-        Console.WriteLine("BusinessLogic");
         if (request == null)
         {
             throw new ValidationException("Request cannot be null or empty");
         }
 
-        if (string.IsNullOrEmpty(request.VehicleID))
+        if (string.IsNullOrEmpty(request.VehicleID.Trim()))
         {
             throw new ValidationException("VehicleID cannot be null or empty");
         }
 
-        if (request.Capacity < 0)
+        if (request.Capacity <= 0)
         {
-            throw new ValidationException("Capacity cannot be negative");
+            throw new ValidationException("Capacity cannot be zero or negative");
         }
 
-         if (string.IsNullOrEmpty(request.Type))
+         if (string.IsNullOrEmpty(request.Type.Trim()))
         {
             throw new ValidationException("Type cannot be null or empty");
         }
@@ -38,9 +37,9 @@ public static class VehicleBusinessLogic
             throw new ValidationException("Longitude must be between -180 and 180");
         }
 
-         if (request.Speed < 0)
+         if (request.Speed <= 0)
         {
-            throw new ValidationException("Speed cannot be negative");
+            throw new ValidationException("Speed cannot be zero or negative");
         }
     }
 }

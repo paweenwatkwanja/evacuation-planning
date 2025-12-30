@@ -12,7 +12,7 @@ public static class EvacuationZoneBusinessLogic
             throw new ValidationException("Request cannot be null or empty");
         }
 
-        if (string.IsNullOrEmpty(request.ZoneID))
+        if (string.IsNullOrEmpty(request.ZoneID.Trim()))
         {
             throw new ValidationException("ZoneID cannot be null or empty");
         }
@@ -27,9 +27,9 @@ public static class EvacuationZoneBusinessLogic
             throw new ValidationException("Longitude must be between -180 and 180");
         }
 
-        if (request.NumberOfPeople < 0)
+        if (request.NumberOfPeople <= 0)
         {
-            throw new ValidationException("NumberOfPeople cannot be negative");
+            throw new ValidationException("NumberOfPeople cannot be zero or negative");
         }
 
         if (request.UrgencyLevel < 1 || request.UrgencyLevel > 5)

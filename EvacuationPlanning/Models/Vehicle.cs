@@ -1,8 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace Models;
 
+[Index(nameof(VehicleID), IsUnique = true)]
 [Table("vehicle")]
 public class Vehicle
 {
