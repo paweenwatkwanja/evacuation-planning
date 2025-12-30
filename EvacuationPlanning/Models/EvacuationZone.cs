@@ -1,7 +1,9 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace Models;
 
+[Index(nameof(ZoneID), IsUnique = true)]
 [Table("evacuation_zone")]
 public class EvacuationZone
 {

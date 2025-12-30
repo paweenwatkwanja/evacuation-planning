@@ -1,3 +1,4 @@
+using Exceptions;
 using Models;
 
 namespace BusinessLogic;
@@ -6,40 +7,39 @@ public static class VehicleBusinessLogic
 {
     public static void ValidateVehicleRequest(VehicleRequest request)
     {
-        Console.WriteLine("BusinessLogic");
         if (request == null)
         {
-            throw new ArgumentException("Request cannot be null or empty");
+            throw new ValidationException("Request cannot be null or empty");
         }
 
-        if (string.IsNullOrEmpty(request.VehicleID))
+        if (string.IsNullOrEmpty(request.VehicleID.Trim()))
         {
-            throw new ArgumentException("VehicleID cannot be null or empty");
+            throw new ValidationException("VehicleID cannot be null or empty");
         }
 
-        if (request.Capacity < 0)
+        if (request.Capacity <= 0)
         {
-            throw new ArgumentException("Capacity cannot be negative");
+            throw new ValidationException("Capacity cannot be zero or negative");
         }
 
-         if (string.IsNullOrEmpty(request.Type))
+         if (string.IsNullOrEmpty(request.Type.Trim()))
         {
-            throw new ArgumentException("Type cannot be null or empty");
+            throw new ValidationException("Type cannot be null or empty");
         }
 
         if (request.LocationCoordinates.Latitude < -90 || request.LocationCoordinates.Latitude > 90)
         {
-            throw new ArgumentException("Latitude must be between -90 and 90");
+            throw new ValidationException("Latitude must be between -90 and 90");
         }
 
         if (request.LocationCoordinates.Longitude < -180 || request.LocationCoordinates.Longitude > 180)
         {
-            throw new ArgumentException("Longitude must be between -180 and 180");
+            throw new ValidationException("Longitude must be between -180 and 180");
         }
 
-         if (request.Speed < 0)
+         if (request.Speed <= 0)
         {
-            throw new ArgumentException("Speed cannot be negative");
+            throw new ValidationException("Speed cannot be zero or negative");
         }
     }
 }

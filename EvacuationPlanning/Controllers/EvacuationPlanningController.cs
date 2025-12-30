@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using Models;
 using BusinessFlow;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 [Route("/api/")]
 [ApiController]
@@ -16,17 +18,45 @@ public class EvacuationPlanningController : ControllerBase
     }
 
     [HttpPost("evacuation-zones")]
-    public IActionResult PostEvacuationZones([FromBody] EvacuationZoneRequest request)
+    public async Task<IActionResult> PostEvacuationZonesAsync([FromBody] List<EvacuationZoneRequest> requests)
     {
-        EvacuationZoneResponse response = _evacuationPlanningBusinessFlow.ProcessEvacuationZone(request);
-        return Ok(response);
+        List<EvacuationZoneResponse> responses = await _evacuationPlanningBusinessFlow.ProcessEvacuationZonesAsync(requests);
+        return Created("evacuation-zones", responses);
     }
 
     [HttpPost("vehicles")]
-    public IActionResult PostVehicles([FromBody] VehicleRequest request)
+    public async Task<IActionResult> PostVehiclesAsync([FromBody] List<VehicleRequest> requests)
     {
-        VehicleResponse response = _evacuationPlanningBusinessFlow.ProcessVehicle(request);
-        return Ok(response);
+        List<VehicleResponse> responses = await _evacuationPlanningBusinessFlow.ProcessVehiclesAsync(requests);
+        return Created("vehicles", responses);
+    }
+
+    [HttpPost("evacuations/plan")]
+    public async Task<IActionResult> PostEvacuationPlanAsync()
+    {
+        List<EvacuationPlan> responses = await _evacuationPlanningBusinessFlow.ProcessEvacuationPlanAsync();
+        return Ok(responses);
+    }
+
+    [HttpGet("evacuations/status")]
+    public async Task<IActionResult> GetEvacuationStatusAsync()
+    {
+        List<EvacuationStatus> responses = await _evacuationPlanningBusinessFlow.GetEvacuationStatusesAsync();
+        return Ok(responses);
+    }
+
+    [HttpPut("evacuations/update/{id}")]
+    public async Task<IActionResult> UpdateEvacuationStatusAsync(int id, [FromBody] EvacuationStatusUpdateRequest request)
+    {
+        await _evacuationPlanningBusinessFlow.UpdateEvacuationStatusAndRelatedDataAsync(id, request);
+        return Ok();
+    }
+
+    [HttpDelete("evacuations/clear")]
+    public async Task<IActionResult> DeleteEvacuationsAsync()
+    {
+        await _evacuationPlanningBusinessFlow.DeleteAllDataAsync();
+        return Ok();
     }
 }
 
