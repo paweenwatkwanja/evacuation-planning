@@ -51,7 +51,7 @@ public class RedisService
         }
         _logger.LogInformation($"Getting cache for key: {key}");
 
-        var values = await _db.HashGetAllAsync(key);
+        HashEntry[] values = await _db.HashGetAllAsync(key);
         List<T> data = values
             .Select(v => JsonSerializer.Deserialize<T>((byte[])v.Value))
             .ToList();
