@@ -7,4 +7,10 @@ public class EvacuationPlanResponse
     public long VehicleID { get; set; }
     public string ETA { get; set; }
     public int NumberOfPeople { get; set; }
+    
+    [ForeignKey("ZoneID")] 
+    public EvacuationZone EvacuationZone { get; set; } 
+    
+    [ForeignKey("VehicleID")] 
+    public Vehicle Vehicle { get; set; } 
 }
