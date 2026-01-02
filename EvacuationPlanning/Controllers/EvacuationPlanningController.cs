@@ -34,7 +34,7 @@ public class EvacuationPlanningController : ControllerBase
     [HttpPost("evacuations/plan")]
     public async Task<IActionResult> PostEvacuationPlanAsync()
     {
-        List<EvacuationPlan> responses = await _evacuationPlanningBusinessFlow.ProcessEvacuationPlanAsync();
+        List<EvacuationPlanResponse> responses = await _evacuationPlanningBusinessFlow.ProcessEvacuationPlanAsync();
         return Ok(responses);
     }
 
@@ -56,6 +56,13 @@ public class EvacuationPlanningController : ControllerBase
     public async Task<IActionResult> DeleteEvacuationsAsync()
     {
         await _evacuationPlanningBusinessFlow.DeleteAllDataAsync();
+        return Ok();
+    }
+
+    [HttpDelete("cache/clear")]
+    public async Task<IActionResult> DeleteCacheAsync()
+    {
+        await _evacuationPlanningBusinessFlow.DeleteCacheAsync();
         return Ok();
     }
 }

@@ -14,14 +14,13 @@ public class Repository<T> : IRepository<T> where T : class
         _dbContext = dbContext;
         _dbSet = dbContext.Set<T>();
     }
-
     public async Task<List<T>> GetAllAsync(params string[] includes)
     {
         IQueryable<T> query = _dbSet;
 
         if (includes != null && includes.Length > 0)
         {
-            foreach (var include in includes)
+            foreach (string include in includes)
             {
                 query = query.Include(include);
             }
@@ -31,12 +30,12 @@ public class Repository<T> : IRepository<T> where T : class
     }
 
     public async Task<List<T>> FindAsync(
-        Expression<Func<T, bool>> predicate,
-        Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
-        params string[] includes
-        )
+    Expression<Func<T, bool>> predicate,
+    Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
+    params string[] includes
+)
     {
-        var query = _dbSet.Where(predicate);
+        IQueryable<T> query = _dbSet.Where(predicate);
 
         if (orderBy != null)
         {
@@ -45,7 +44,7 @@ public class Repository<T> : IRepository<T> where T : class
 
         if (includes != null && includes.Length > 0)
         {
-            foreach (var include in includes)
+            foreach (string include in includes)
             {
                 query = query.Include(include);
             }
@@ -55,12 +54,12 @@ public class Repository<T> : IRepository<T> where T : class
     }
 
     public async Task<T?> FindOneAsync(
-        Expression<Func<T, bool>> predicate,
-        Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
-        params string[] includes
-   )
+    Expression<Func<T, bool>> predicate,
+    Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
+    params string[] includes
+)
     {
-        var query = _dbSet.Where(predicate);
+        IQueryable<T> query = _dbSet.Where(predicate);
 
         if (orderBy != null)
         {
@@ -69,12 +68,11 @@ public class Repository<T> : IRepository<T> where T : class
 
         if (includes != null && includes.Length > 0)
         {
-            foreach (var include in includes)
+            foreach (string include in includes)
             {
                 query = query.Include(include);
             }
         }
-
 
         return await query.FirstOrDefaultAsync();
     }

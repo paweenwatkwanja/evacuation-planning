@@ -15,6 +15,7 @@ public static class DistanceCalculator
                    Math.Cos(startLatitude) * Math.Cos(destLatitude);
         double radius = 6371;
         double c = 2 * Math.Asin(Math.Sqrt(a));
+        
         return radius * c;
     }
 }

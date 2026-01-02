@@ -10,18 +10,23 @@ using StackExchange.Redis;
 
 [assembly: ApiController]
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-var _connectionString = builder.Configuration.GetConnectionString("PostgresqlConnection");
+IWebHostEnvironment environment = builder.Environment;
+Console.WriteLine($"Environment: {environment.EnvironmentName}");
+
+Console.WriteLine("Configuring Postgresql...");
+
+string postgresConnection = builder.Configuration.GetConnectionString("PostgresqlConnection") ?? throw new InvalidOperationException("Postgresql connection string is not configured."); 
 builder.Services.AddDbContext<EvacuationPlanningDbContext>(options =>
-    options.UseNpgsql(_connectionString));
+    options.UseNpgsql(postgresConnection));
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
-    var configuration = ConfigurationOptions.Parse(
-        builder.Configuration.GetConnectionString("RedisConnection"),
-        true);
-
+    Console.WriteLine("Configuring Redis...");
+    string redisConnection = builder.Configuration.GetConnectionString("RedisConnection") 
+        ?? throw new InvalidOperationException("Redis connection string not found.");
+    ConfigurationOptions configuration = ConfigurationOptions.Parse(redisConnection, true);
     configuration.AbortOnConnectFail = false;
 
     return ConnectionMultiplexer.Connect(configuration);
@@ -29,24 +34,37 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 
 builder.Services.AddScoped<EvacuationPlanningBusinessFlow>();
 
-builder.Services.AddSingleton<RedisService>();
+builder.Services.AddScoped<RedisService>();
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddControllers();
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
-await using var scope = app.Services.CreateAsyncScope();
-var dbContext = scope.ServiceProvider.GetRequiredService<EvacuationPlanningDbContext>();
-var canConnect = await dbContext.Database.CanConnectAsync();
-dbContext.Database.Migrate();
+await using AsyncServiceScope scope = app.Services.CreateAsyncScope();
+EvacuationPlanningDbContext dbContext = scope.ServiceProvider.GetRequiredService<EvacuationPlanningDbContext>();
+bool canConnect = await dbContext.Database.CanConnectAsync();
+if (canConnect)
+{
+    IEnumerable<string> pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
+
+    if (pendingMigrations.Any())
+    {
+        Console.WriteLine($"Applying {pendingMigrations.Count()} pending migration(s)...");
+        await dbContext.Database.MigrateAsync();
+        Console.WriteLine("Migrations applied successfully.");
+    }
+    else
+    {
+        Console.WriteLine("Database is already up to date.");
+    }
+}
 
 app.UseMiddleware<GlobalExceptionHandler>();
-app.UseRouting();
-app.UseEndpoints(endpoints =>
-{
-    endpoints.MapControllers();
-});
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
 
+Console.WriteLine("App is running.");
 app.Run();
