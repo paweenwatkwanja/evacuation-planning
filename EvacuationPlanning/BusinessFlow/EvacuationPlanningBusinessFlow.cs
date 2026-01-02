@@ -317,7 +317,7 @@ public class EvacuationPlanningBusinessFlow
     public async Task<List<EvacuationStatus>> GetEvacuationStatusesAsync()
     {
         List<EvacuationStatus> cachedEvacuationStatuses = await _redisService.GetHashSetCacheAsync<EvacuationStatus>("EvacuationStatuses");
-        if (cachedEvacuationStatuses.Count > 0)
+        if (cachedEvacuationStatuses == null || cachedEvacuationStatuses.Count > 0)
         {
             _logger.LogInformation("Evacuation statuses retrieved from cache.");
             return cachedEvacuationStatuses;
