@@ -196,7 +196,6 @@ public class EvacuationPlanningBusinessFlow
             Vehicle vehicle = EvacuationPlanBusinessLogic.FindAppropriateVehicle(evacuationZone, sortedVehicles);
             if (vehicle == null)
             {
-                _logger.LogInformation("No available vehicles within a reasonable distance for Evacuation Zone ID: " + evacuationZone.Id);
                 continue;
             }
 
