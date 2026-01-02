@@ -34,7 +34,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 
 builder.Services.AddScoped<EvacuationPlanningBusinessFlow>();
 
-builder.Services.AddSingleton<RedisService>();
+builder.Services.AddScoped<RedisService>();
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 

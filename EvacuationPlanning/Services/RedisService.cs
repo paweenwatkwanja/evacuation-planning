@@ -6,7 +6,7 @@ namespace Services;
 
 public class RedisService
 {
-     private readonly IConnectionMultiplexer _redis;
+    private readonly IConnectionMultiplexer _redis;
     private readonly IDatabase _db;
     private ILogger<RedisService> _logger;
 
@@ -17,38 +17,52 @@ public class RedisService
         _logger = logger;
     }
 
-     private bool IsAvailable => _redis.IsConnected;
+    private bool isRedisAvailable(IConnectionMultiplexer multiplexer)
+    {
+        return multiplexer.IsConnected;
+    }
 
     public async Task SetHastSetCacheAsync(string key, HashEntry[] data, TimeSpan? cacheDuration = null)
     {
-        if (!IsAvailable)
+        if (!isRedisAvailable(_redis))
         {
-            _logger.LogWarning("Redis is not available.");
+            _logger.LogError("Redis is not available. No set operation performed.");
             return;
         }
-        _logger.LogInformation($"Setting cache for key: {key}");
-        _db.KeyExpireAsync(key, cacheDuration ?? TimeSpan.FromHours(1));
-        await _db.HashSetAsync(key, data);
+
+        try
+        {
+            _logger.LogInformation($"Setting cache for key: {key}");
+            _db.KeyExpireAsync(key, cacheDuration ?? TimeSpan.FromHours(1));
+            await _db.HashSetAsync(key, data);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error setting cache. Exception: {ex.Message}");
+        }
     }
 
     public async Task UpdateHashSetCacheAsync(string key, HashEntry[] data)
     {
-        if (!IsAvailable)
+        if (!isRedisAvailable(_redis))
         {
-            _logger.LogWarning("Redis is not available.");
+            _logger.LogError("Redis is not available. No update operation performed.");
             return;
         }
-        _logger.LogInformation($"Updating cache for key: {key}");
-        await _db.HashSetAsync(key, data);
+
+        try
+        {
+            _logger.LogInformation($"Updating cache for key: {key}");
+            await _db.HashSetAsync(key, data);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error updating cache. Exception: {ex.Message}");
+        }
     }
 
     public async Task<List<T>> GetHashSetCacheAsync<T>(string key) where T : class
     {
-        if (!IsAvailable)
-        {
-            _logger.LogWarning("Redis is not available.");
-            return null;
-        }
         _logger.LogInformation($"Getting cache for key: {key}");
 
         HashEntry[] values = await _db.HashGetAllAsync(key);
@@ -64,12 +78,20 @@ public class RedisService
 
     public async Task DeleteCacheAsync(string key)
     {
-        if (!IsAvailable)
+        if (!isRedisAvailable(_redis))
         {
-            _logger.LogWarning("Redis is not available.");
+            _logger.LogError("Redis is not available. No delete operation performed.");
             return;
         }
-        _logger.LogInformation($"Deleting cache for key: {key}");
-        await _db.KeyDeleteAsync(key);
+
+        try
+        {
+            _logger.LogInformation($"Deleting cache for key: {key}");
+            await _db.KeyDeleteAsync(key);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error deleting cache. Exception: {ex.Message}");
+        }
     }
 }

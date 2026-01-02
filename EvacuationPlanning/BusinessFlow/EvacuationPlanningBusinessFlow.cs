@@ -72,7 +72,7 @@ public class EvacuationPlanningBusinessFlow
             LocationCoordinates = new LocationCoordinate()
             {
                 Latitude = zone.Latitude,
-                Longitude = zone .Longitude,
+                Longitude = zone.Longitude,
             },
             NumberOfPeople = zone.NumberOfPeople,
             UrgencyLevel = zone.UrgencyLevel
@@ -88,6 +88,7 @@ public class EvacuationPlanningBusinessFlow
         {
             throw new ValidationException("Vehicle requests cannot be null or empty.");
         }
+        
         List<Vehicle> vehicles = convertRequestsToVehiclesAndValidate(requests);
 
         await _unitOfWork.Vehicles.AddRangeAsync(vehicles);
@@ -139,25 +140,25 @@ public class EvacuationPlanningBusinessFlow
     }
 
     //EVACUATION PLAN
-    public async Task<List<EvacuationPlan>> ProcessEvacuationPlanAsync()
+    public async Task<List<EvacuationPlanResponse>> ProcessEvacuationPlanAsync()
     {
-        List<EvacuationPlan> evacuationPlans = new List<EvacuationPlan>();
+        List<EvacuationPlanResponse> responses = new List<EvacuationPlanResponse>();
 
         List<EvacuationZone> evacuationZones = await getEvacuationZonesAsync();
         if (evacuationZones.Count <= 0)
         {
             _logger.LogInformation("No evacuation zones available to process evacuation plans.");
-            return evacuationPlans;
+            return responses;
         }
 
         List<Vehicle> vehicles = await getAvailableVehiclesAsync();
         if (vehicles.Count <= 0)
         {
             _logger.LogInformation("No vehicles available to process evacuation plans.");
-            return evacuationPlans;
+            return responses;
         }
 
-        evacuationPlans = prepareDataAndCreateEvacuationPlans(evacuationZones, vehicles);
+        List<EvacuationPlan> evacuationPlans = prepareDataAndCreateEvacuationPlans(evacuationZones, vehicles);
         await addEvacuationPlanAsync(evacuationPlans);
 
         List<long> vechicleIds = evacuationPlans.Select(ep => ep.Vehicle.Id).ToList();
@@ -169,7 +170,9 @@ public class EvacuationPlanningBusinessFlow
         List<Log> logs = convertEvacuationPlansToLogs(evacuationPlans);
         await addLogsAsync(logs);
 
-        return evacuationPlans.ToList();
+        responses = convertEvacuationPlansToResponses(evacuationPlans);
+
+        return responses;
     }
 
     private async Task<List<EvacuationZone>> getEvacuationZonesAsync()
@@ -203,13 +206,18 @@ public class EvacuationPlanningBusinessFlow
                 ZoneID = evacuationZone.Id,
                 VehicleID = vehicle.Id,
                 NumberOfPeople = (remainingPeople <= 0) ? evacuationZone.NumberOfPeople : vehicle.Capacity,
-                ETA = ETACalculator.CalculateETAInMinute(vehicle.Distance, vehicle.Speed),
+                ETA = Math.Ceiling(ETACalculator.CalculateETAInMinute(
+                DistanceCalculator.CalculateDistance(
+                    vehicle.Latitude, vehicle.Longitude,
+                    evacuationZone.Latitude, evacuationZone.Longitude),
+                vehicle.Speed)),
                 RemainingPeople = (remainingPeople > 0) ? remainingPeople : 0
             };
             evacuationPlans.Add(evacuationPlan);
 
             sortedVehicles.RemoveAll(v => v.VehicleID == vehicle.VehicleID);
         }
+
         return evacuationPlans;
     }
 
@@ -264,6 +272,7 @@ public class EvacuationPlanningBusinessFlow
             };
             evacuationStatuses.Add(log);
         }
+
         return evacuationStatuses;
     }
 
@@ -280,7 +289,22 @@ public class EvacuationPlanningBusinessFlow
             };
             logs.Add(log);
         }
+        
         return logs;
+    }
+
+    private List<EvacuationPlanResponse> convertEvacuationPlansToResponses(List<EvacuationPlan> evacuationPlans)
+    {
+        List<EvacuationPlanResponse> responses = evacuationPlans.Select(plan => new EvacuationPlanResponse
+        {
+            Id = plan.Id,
+            ZoneID = plan.ZoneID,
+            VehicleID = plan.VehicleID,
+            ETA = string.Concat(plan.ETA.ToString(), " minutes"),
+            NumberOfPeople = plan.NumberOfPeople
+        }).ToList();
+
+        return responses;
     }
 
     private async Task addLogsAsync(List<Log> logs)
@@ -293,7 +317,7 @@ public class EvacuationPlanningBusinessFlow
     public async Task<List<EvacuationStatus>> GetEvacuationStatusesAsync()
     {
         List<EvacuationStatus> cachedEvacuationStatuses = await _redisService.GetHashSetCacheAsync<EvacuationStatus>("EvacuationStatuses");
-        if (cachedEvacuationStatuses != null)
+        if (cachedEvacuationStatuses.Count > 0)
         {
             _logger.LogInformation("Evacuation statuses retrieved from cache.");
             return cachedEvacuationStatuses;
@@ -316,7 +340,8 @@ public class EvacuationPlanningBusinessFlow
         if (evacuationStatus == null)
         {
             throw new NotFoundException($"EvacuationStatus with ID {id} not found.");
-        } else if (evacuationStatus.IsEvacuationCompleted)
+        }
+        else if (evacuationStatus.IsEvacuationCompleted)
         {
             _logger.LogInformation($"EvacuationStatus with ID {id} is already completed. No further updates allowed.");
             return;
@@ -384,7 +409,7 @@ public class EvacuationPlanningBusinessFlow
         List<Log> logs = new List<Log>() {  new Log()
         {
             VehicleID = vehicle.Id,
-            ETA = ETACalculator.CalculateETAInMinute(distance, vehicle.Speed),
+            ETA = Math.Ceiling(ETACalculator.CalculateETAInMinute(distance, vehicle.Speed)),
             IsEvacuationCompleted = isEvacuationCompleted
         }};
 
@@ -412,6 +437,12 @@ public class EvacuationPlanningBusinessFlow
         await _unitOfWork.Vehicles.DeleteAllAsync();
         await _unitOfWork.EvacuationZones.DeleteAllAsync();
         await _unitOfWork.SaveChangesAsync();
+        await _redisService.DeleteCacheAsync("EvacuationStatuses");
+    }
+
+    // CLEAR CACHE
+    public async Task DeleteCacheAsync()
+    {
         await _redisService.DeleteCacheAsync("EvacuationStatuses");
     }
 }
