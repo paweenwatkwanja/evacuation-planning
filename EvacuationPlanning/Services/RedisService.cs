@@ -32,13 +32,13 @@ public class RedisService
 
         try
         {
-            _logger.LogInformation($"Setting cache for key: {key}");
+            _logger.LogInformation($"Setting cache for key: {key}.");
             _db.KeyExpireAsync(key, cacheDuration ?? TimeSpan.FromHours(1));
             await _db.HashSetAsync(key, data);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error setting cache. Exception: {ex.Message}");
+            _logger.LogError($"Error setting cache. Exception: {ex.Message}.");
         }
     }
 
@@ -52,7 +52,7 @@ public class RedisService
 
         try
         {
-            _logger.LogInformation($"Updating cache for key: {key}");
+            _logger.LogInformation($"Updating cache for key: {key}.");
             await _db.HashSetAsync(key, data);
         }
         catch (Exception ex)
@@ -63,16 +63,27 @@ public class RedisService
 
     public async Task<List<T>> GetHashSetCacheAsync<T>(string key) where T : class
     {
-        _logger.LogInformation($"Getting cache for key: {key}");
-
-        HashEntry[] values = await _db.HashGetAllAsync(key);
-        List<T> data = values
-            .Select(v => JsonSerializer.Deserialize<T>((byte[])v.Value))
-            .ToList();
-        if (data == null)
+        List<T> data = new List<T>();
+        if (!isRedisAvailable(_redis))
         {
-            return null;
+            _logger.LogError("Redis is not available. No get operation performed.");
+            return data;
         }
+
+        try
+        {
+            _logger.LogInformation($"Getting cache for key: {key}.");
+            HashEntry[] values = await _db.HashGetAllAsync(key);
+            data = values
+                .Select(v => JsonSerializer.Deserialize<T>((byte[])v.Value))
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error getting cache. Exception: {ex.Message}.");
+            return data;
+        }
+
         return data;
     }
 
@@ -86,12 +97,12 @@ public class RedisService
 
         try
         {
-            _logger.LogInformation($"Deleting cache for key: {key}");
+            _logger.LogInformation($"Deleting cache for key: {key}.");
             await _db.KeyDeleteAsync(key);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error deleting cache. Exception: {ex.Message}");
+            _logger.LogError($"Error deleting cache. Exception: {ex.Message}.");
         }
     }
 }

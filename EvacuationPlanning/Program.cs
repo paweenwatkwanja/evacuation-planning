@@ -66,4 +66,5 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 
+Console.WriteLine("App is running.");
 app.Run();
