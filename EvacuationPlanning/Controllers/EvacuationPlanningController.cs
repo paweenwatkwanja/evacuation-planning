@@ -59,7 +59,7 @@ public class EvacuationPlanningController : ControllerBase
         return Ok();
     }
 
-     [HttpDelete("cache/clear")]
+    [HttpDelete("cache/clear")]
     public async Task<IActionResult> DeleteCacheAsync()
     {
         await _evacuationPlanningBusinessFlow.DeleteCacheAsync();

@@ -262,14 +262,14 @@ public class EvacuationPlanningBusinessFlow
         List<EvacuationStatus> evacuationStatuses = new List<EvacuationStatus>();
         foreach (EvacuationPlan plan in evacuationPlans)
         {
-            EvacuationStatus log = new EvacuationStatus()
+            EvacuationStatus status = new EvacuationStatus()
             {
                 ZoneID = plan.EvacuationZone.Id,
                 TotalEvacuated = 0,
                 RemainingPeople = plan.EvacuationZone.NumberOfPeople,
                 LastVehicleUsed = plan.Vehicle.Id
             };
-            evacuationStatuses.Add(log);
+            evacuationStatuses.Add(status);
         }
 
         return evacuationStatuses;
@@ -316,7 +316,7 @@ public class EvacuationPlanningBusinessFlow
     public async Task<List<EvacuationStatus>> GetEvacuationStatusesAsync()
     {
         List<EvacuationStatus> cachedEvacuationStatuses = await _redisService.GetHashSetCacheAsync<EvacuationStatus>("EvacuationStatuses");
-        if (cachedEvacuationStatuses == null || cachedEvacuationStatuses.Count > 0)
+        if (cachedEvacuationStatuses != null || cachedEvacuationStatuses.Count > 0)
         {
             _logger.LogInformation("Evacuation statuses retrieved from cache.");
             return cachedEvacuationStatuses;
